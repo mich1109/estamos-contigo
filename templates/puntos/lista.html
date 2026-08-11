@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% load ayuda_extras %}
+
+{% block titulo %}Puntos de ayuda · ESTAMOS CONTIGO{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+
+  <div class="cabecera-seccion cabecera-puntos">
+    <div>
+      <h1>📍 Puntos de ayuda</h1>
+      <p class="mb-0">
+        Directorio de lugares donde puedes recibir o entregar ayuda.
+        {{ total_confirmados }} punto{{ total_confirmados|pluralize:"s" }}
+        confirmado{{ total_confirmados|pluralize:"s" }} por fuentes oficiales.
+      </p>
+    </div>
+    <a href="{% url 'puntos:crear' %}" class="btn btn-light btn-lg">+ Reportar un punto</a>
+  </div>
+
+  <!-- Los dos caminos principales -->
+  <section class="dos-caminos">
+    <a href="?modo=necesito#filtros"
+       class="camino camino-rojo {% if modo == 'necesito' %}camino-activo{% endif %}">
+      <span class="camino-icono">🆘</span>
+      <span class="camino-texto">NECESITO AYUDA</span>
+      <span class="camino-sub">Encuentra dónde ir</span>
+    </a>
+    <a href="?modo=ayudar#filtros"
+       class="camino camino-verde {% if modo == 'ayudar' %}camino-activo{% endif %}">
+      <span class="camino-icono">❤️</span>
+      <span class="camino-texto">QUIERO AYUDAR</span>
+      <span class="camino-sub">Encuentra dónde donar</span>
+    </a>
+  </section>
+
+  <!-- Buscador -->
+  <form method="get" class="buscador-puntos" id="filtros">
+    {% if modo %}<input type="hidden" name="modo" value="{{ modo }}">{% endif %}
+    <label for="q" class="visually-hidden">¿Qué ayuda necesitas?</label>
+    <div class="buscador-caja buscador-caja-clara">
+      <span class="buscador-icono" aria-hidden="true">🔎</span>
+      <input type="search" id="q" name="q" value="{{ filtros.q }}"
+             placeholder="¿Qué ayuda necesitas? Ej: cobijas, albergue, pañales, agua…"
+             autocomplete="off">
+      <button type="submit" class="buscador-boton">Buscar</button>
+    </div>
+
+    <!-- Filtro por ciudad -->
+    <div class="row g-2 mt-2">
+      <div class="col-12 col-md-4">
+        <label for="f-ciudad" class="form-label">Selecciona tu ciudad</label>
+        <select id="f-ciudad" name="ciudad" class="form-select form-select-lg"
+                onchange="this.form.submit()">
+          <option value="">Todos los municipios</option>
+          {% for c in ciudades %}
+            <option value="{{ c.ciudad }}" {% if filtros.ciudad == c.ciudad %}selected{% endif %}>
+              {{ c.ciudad }}{% if c.departamento %} — {{ c.departamento }}{% endif %} ({{ c.total }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-4">
+        <label for="f-tipo" class="form-label">Tipo de punto</label>
+        <select id="f-tipo" name="tipo" class="form-select" onchange="this.form.submit()">
+          <option value="">Todos los tipos</option>
+          {% for valor, etiqueta in tipos %}
+            <option value="{{ valor }}" {% if filtros.tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-4">
+        <label for="f-estado" class="form-label">Estado de la información</label>
+        <select id="f-estado" name="estado" class="form-select" onchange="this.form.submit()">
+          <option value="">Todos</option>
+          {% for valor, etiqueta in estados %}
+            <option value="{{ valor }}" {% if filtros.estado == valor %}selected{% endif %}>
+              {% if valor == "CONFIRMADO" %}🟢{% elif valor == "CERRADO" %}🔴{% else %}🟡{% endif %}
+              {{ etiqueta }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- Chips de necesidad -->
+    <div class="chips-necesidad">
+      <span class="chips-titulo">
+        {% if modo == "ayudar" %}¿Qué quieres aportar?{% else %}¿Qué necesitas?{% endif %}
+      </span>
+      <div class="chips">
+        <button type="submit" name="necesidad" value=""
+                class="chip {% if not filtros.necesidad %}chip-activo{% endif %}">
+          Ver todo
+        </button>
+        {% if modo == "ayudar" %}
+          {% for clave, etiqueta in formas_ayudar %}
+            <button type="submit" name="necesidad" value="{{ clave }}"
+                    class="chip {% if filtros.necesidad == clave %}chip-activo{% endif %}">
+              {{ etiqueta }}
+            </button>
+          {% endfor %}
+        {% else %}
+          {% for clave, etiqueta in necesidades %}
+            <button type="submit" name="necesidad" value="{{ clave }}"
+                    class="chip {% if filtros.necesidad == clave %}chip-activo{% endif %}">
+              {{ etiqueta }}
+            </button>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    {% if hay_filtros %}
+      <a href="{% url 'puntos:lista' %}" class="btn btn-outline-secondary btn-sm mt-2">
+        ✕ Limpiar todos los filtros
+      </a>
+    {% endif %}
+  </form>
+
+  <!-- Aviso de verificación -->
+  <div class="aviso-verificacion">
+    <p class="mb-2">
+      <strong>🔎 Confirma antes de desplazarte.</strong>
+      Los puntos marcados 🟢 provienen de fuentes oficiales u organizaciones
+      reconocidas. Los marcados 🟡 <u>aún no tienen confirmación oficial</u>.
+      Durante una emergencia los horarios y la disponibilidad cambian rápido:
+      llama antes de ir siempre que haya un teléfono.
+    </p>
+    <p class="aviso-dinero mb-0">
+      <strong>🚫 Nunca envíes dinero</strong> a cuentas personales.
+      Las donaciones económicas solo por canales oficiales de las entidades.
+    </p>
+  </div>
+
+  <!-- Resultados agrupados por ciudad -->
+  {% if grupos %}
+    <p class="resultado-conteo">
+      {{ total }} punto{{ total|pluralize:"s" }} en
+      {{ grupos|length }} ciudad{{ grupos|length|pluralize:"es" }}
+    </p>
+
+    <!-- Índice rápido de municipios -->
+    <nav class="indice-ciudades" aria-label="Ir a un municipio">
+      {% for grupo in grupos %}
+        <a href="#ciudad-{{ forloop.counter }}" class="indice-ciudad">
+          {{ grupo.ciudad }}
+          {% if grupo.departamento %}
+            <span class="indice-depto">{{ grupo.departamento }}</span>
+          {% endif %}
+          <span class="indice-total">{{ grupo.total }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+
+    {% for grupo in grupos %}
+      <section class="grupo-ciudad" id="ciudad-{{ forloop.counter }}">
+        <div class="grupo-cabecera">
+          <h2 class="grupo-titulo">
+            📍 {{ grupo.ciudad }}{% if grupo.departamento %}<span class="grupo-departamento"> — {{ grupo.departamento }}</span>{% endif %}
+          </h2>
+          <span class="grupo-conteo">
+            {{ grupo.total }} punto{{ grupo.total|pluralize:"s" }}
+            {% if grupo.confirmados %}
+              · <span class="conteo-confirmado">🟢 {{ grupo.confirmados }} confirmado{{ grupo.confirmados|pluralize:"s" }}</span>
+            {% endif %}
+          </span>
+          <a href="?ciudad={{ grupo.ciudad|urlencode }}" class="grupo-solo-esta">
+            Ver solo {{ grupo.ciudad }} →
+          </a>
+        </div>
+
+        <div class="row g-3">
+          {% for punto in grupo.puntos %}
+            <div class="col-md-6 col-lg-4">
+              {% include "puntos/parcial_tarjeta.html" with punto=punto %}
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
+
+  {% elif pagina.object_list %}
+    <p class="resultado-conteo">
+      {{ total }} punto{{ total|pluralize:"s" }} en {{ filtros.ciudad }}
+      <a href="{% url 'puntos:lista' %}" class="ver-todas-ciudades">← Ver todas las ciudades</a>
+    </p>
+
+    <div class="row g-3">
+      {% for punto in pagina %}
+        <div class="col-md-6 col-lg-4">
+          {% include "puntos/parcial_tarjeta.html" with punto=punto %}
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if pagina.has_other_pages %}
+      <nav class="mt-4" aria-label="Paginación">
+        <ul class="pagination justify-content-center">
+          {% if pagina.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% query_actual request page=pagina.previous_page_number %}">Anterior</a>
+            </li>
+          {% endif %}
+          <li class="page-item disabled">
+            <span class="page-link">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+          </li>
+          {% if pagina.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?{% query_actual request page=pagina.next_page_number %}">Siguiente</a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+
+  {% else %}
+    <div class="panel-vacio">
+      <p class="vacio-icono">🔎</p>
+      <h2>No hay puntos que coincidan con tu búsqueda</h2>
+      <p>
+        {% if filtros.ciudad %}
+          Todavía no hay puntos publicados en {{ filtros.ciudad }} con esos
+          filtros. Prueba con otra ciudad o quita algún filtro.
+        {% else %}
+          Prueba con otros términos o quita algún filtro.
+        {% endif %}
+      </p>
+      <div class="d-flex gap-2 justify-content-center flex-wrap">
+        <a href="{% url 'puntos:lista' %}" class="btn btn-outline-secondary">Ver todos los puntos</a>
+        <a href="{% url 'puntos:crear' %}" class="btn btn-purple">¿Conoces un punto? Repórtalo</a>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Reportar un punto -->
+  <section class="invitacion-reportar">
+    <div>
+      <h2 class="h5 mb-1">➕ ¿Conoces un punto de ayuda que no aparece?</h2>
+      <p class="mb-0 small text-muted">
+        Repórtalo y quedará pendiente de verificación antes de publicarse como confirmado.
+      </p>
+    </div>
+    <a href="{% url 'puntos:crear' %}" class="btn btn-purple btn-lg">Reportar un punto</a>
+  </section>
+
+  <!-- Emergencia -->
+  <section class="recordatorio">
+    <h2>Ante una emergencia, llama a los organismos oficiales</h2>
+    <p>
+      Este directorio ayuda a organizar la ayuda comunitaria. No es un servicio
+      de rescate. Si hay personas atrapadas, heridas o en peligro inmediato:
+    </p>
+    <div class="row g-2 justify-content-center">
+      <div class="col-6 col-md-2"><a href="tel:123" class="btn-emergencia">123<small>Emergencias</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:119" class="btn-emergencia">119<small>Bomberos</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:132" class="btn-emergencia">132<small>Cruz Roja</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:144" class="btn-emergencia">144<small>Defensa Civil</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:125" class="btn-emergencia">125<small>Ambulancia</small></a></div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

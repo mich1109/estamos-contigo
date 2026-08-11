@@ -1,0 +1,30 @@
+# Secretos: NUNCA subir a GitHub
+.env
+
+# Base de datos local (en Render se usa PostgreSQL)
+db.sqlite3
+
+# Archivos generados
+__pycache__/
+*.pyc
+staticfiles/
+*.log
+
+# Fotos que sube la gente: son datos, no codigo
+media/
+
+# Imagenes originales sin optimizar (las versiones listas estan en static/img/)
+hero.png
+logo.png
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Sistema y editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

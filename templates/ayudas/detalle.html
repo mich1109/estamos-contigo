@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load ayuda_extras static %}
+
+{% block titulo %}{{ oferta.get_tipo_ayuda_display }} en {{ oferta.ciudad }} · ESTAMOS CONTIGO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+  <a href="{% url 'ayudas:lista' %}" class="btn btn-link mb-3">← Volver a las ayudas</a>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <article class="ficha ficha-oferta">
+
+        <div class="ficha-cabecera">
+          <span class="ficha-icono">{{ oferta.tipo_ayuda|icono_tipo }}</span>
+          <div>
+            <h1 class="ficha-titulo">{{ oferta.get_tipo_ayuda_display }}</h1>
+            <p class="ficha-ubicacion">📍 {{ oferta.zona }}, {{ oferta.ciudad }}</p>
+          </div>
+          <span class="insignia-disponibilidad grande">{{ oferta.get_disponibilidad_display }}</span>
+        </div>
+
+        {% if oferta.estado == "RESUELTA" %}
+          <div class="alert alert-success">
+            ✅ <strong>Esta ayuda ya fue entregada.</strong> La administración
+            marcó esta oferta como completada.
+          </div>
+        {% endif %}
+
+        <dl class="ficha-datos">
+          <div>
+            <dt>Ofrecido por</dt>
+            <dd>{{ oferta.alias }}</dd>
+          </div>
+          <div>
+            <dt>Cantidad disponible</dt>
+            <dd>📦 {{ oferta.cantidad }}</dd>
+          </div>
+          <div>
+            <dt>Disponibilidad</dt>
+            <dd>{{ oferta.get_disponibilidad_display }}</dd>
+          </div>
+          <div>
+            <dt>Estado</dt>
+            <dd><span class="insignia-estado {{ oferta.estado|clase_estado }}">{{ oferta.get_estado_display }}</span></dd>
+          </div>
+          <div>
+            <dt>Fecha de publicación</dt>
+            <dd>{{ oferta.creado|date:"d/m/Y H:i" }} ({{ oferta.creado|timesince }} atrás)</dd>
+          </div>
+        </dl>
+
+        <h2 class="h5 mt-4">Descripción de la ayuda</h2>
+        <p class="ficha-descripcion">{{ oferta.descripcion|linebreaks }}</p>
+
+        {% if oferta.foto %}
+          <h2 class="h5 mt-4">Foto</h2>
+          <img src="{{ oferta.foto.url }}" alt="Foto de la ayuda ofrecida" class="ficha-foto">
+          <p class="text-muted small">
+            Foto subida por quien publicó. No ha sido verificada.
+          </p>
+        {% endif %}
+
+      </article>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="tarjeta-contacto">
+        <h2 class="h5">📞 Cómo contactar</h2>
+
+        {% include "parciales/aviso_verificacion.html" %}
+
+        {% if oferta.contacto_telefono %}
+          <a href="tel:{{ oferta.contacto_telefono }}" class="btn btn-success btn-lg w-100 mb-2">
+            📞 Llamar a {{ oferta.contacto_telefono }}
+          </a>
+          {% with numero=oferta.contacto_telefono|whatsapp %}
+            {% if numero %}
+              <a href="https://wa.me/{{ numero }}"
+                 target="_blank" rel="noopener noreferrer"
+                 class="btn btn-outline-success btn-lg w-100 mb-2">
+                💬 Escribir por WhatsApp
+              </a>
+            {% endif %}
+          {% endwith %}
+        {% endif %}
+
+        {% if oferta.contacto_email %}
+          <a href="mailto:{{ oferta.contacto_email }}" class="btn btn-outline-primary btn-lg w-100">
+            ✉️ {{ oferta.contacto_email }}
+          </a>
+        {% endif %}
+
+        {% if not oferta.tiene_contacto %}
+          <p class="text-muted">Esta publicación no incluyó datos de contacto.</p>
+        {% endif %}
+      </div>
+
+      <!-- Difundir -->
+      <div class="tarjeta-compartir">
+        <h2 class="h6">📣 Ayuda a difundir</h2>
+        <p class="small text-muted">
+          Compártelo para que llegue a quien lo necesita.
+        </p>
+        {% include "parciales/compartir.html" with texto=oferta.texto_para_compartir url=oferta.get_absolute_url %}
+      </div>
+
+      {% if oferta.tiene_coordenadas %}
+        <div class="tarjeta-mapa-mini">
+          <h2 class="h5">🗺️ Ubicación</h2>
+          <div id="mapaDetalle" class="mapa-mini"
+               data-lat="{{ oferta.latitud|stringformat:'s' }}"
+               data-lng="{{ oferta.longitud|stringformat:'s' }}"
+               data-titulo="{{ oferta.get_tipo_ayuda_display|escapejs }}"></div>
+          <a href="https://www.openstreetmap.org/?mlat={{ oferta.latitud }}&mlon={{ oferta.longitud }}#map=17/{{ oferta.latitud }}/{{ oferta.longitud }}"
+             target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary w-100 mt-2">
+            Abrir en OpenStreetMap
+          </a>
+        </div>
+      {% endif %}
+
+      {% if coincidencias %}
+        <div class="tarjeta-coincidencias">
+          <h2 class="h5">🤝 Necesidades que podrías cubrir</h2>
+          <p class="small text-muted">
+            Estas personas pidieron algo que coincide con lo que ofreces.
+            Es una sugerencia automática: verifica antes de acordar.
+          </p>
+          {% for c in coincidencias %}
+            <a href="{% url 'solicitudes:detalle' c.solicitud.pk %}" class="coincidencia-item">
+              <span class="coincidencia-icono">{{ c.solicitud.urgencia|punto_urgencia }}</span>
+              <span class="coincidencia-texto">
+                <strong>{{ c.solicitud.get_tipo_ayuda_display }}</strong><br>
+                <small>{{ c.solicitud.zona }}, {{ c.solicitud.ciudad }} · {{ c.solicitud.personas_afectadas }} persona{{ c.solicitud.personas_afectadas|pluralize:"s" }}</small>
+              </span>
+              <span class="coincidencia-score">{{ c.score }}%</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if oferta.tiene_coordenadas %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/mapa-detalle.js' %}"></script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,62 @@
+{% load ayuda_extras %}
+<article class="tarjeta tarjeta-solicitud {{ solicitud.urgencia|clase_urgencia }}">
+  <div class="tarjeta-cabecera">
+    <span class="tarjeta-icono">{{ solicitud.tipo_ayuda|icono_tipo }}</span>
+    <span class="insignia-urgencia {{ solicitud.urgencia|clase_urgencia }}">
+      {{ solicitud.urgencia|punto_urgencia }} {{ solicitud.get_urgencia_display }}
+    </span>
+  </div>
+
+  <h3 class="tarjeta-titulo">{{ solicitud.get_tipo_ayuda_display }}</h3>
+
+  {% if solicitud.foto %}
+    <a href="{{ solicitud.get_absolute_url }}" class="tarjeta-foto-enlace">
+      <img src="{{ solicitud.foto.url }}" alt="Foto de la situación" class="tarjeta-foto" loading="lazy">
+    </a>
+  {% endif %}
+
+  <p class="tarjeta-ubicacion">📍 {{ solicitud.zona }}, {{ solicitud.ciudad }}</p>
+
+  <p class="tarjeta-descripcion">{{ solicitud.descripcion|truncatechars:110 }}</p>
+
+  <div class="tarjeta-datos">
+    <span>👥 {{ solicitud.personas_afectadas }} persona{{ solicitud.personas_afectadas|pluralize:"s" }}</span>
+    <span class="insignia-estado {{ solicitud.estado|clase_estado }}">{{ solicitud.get_estado_display }}</span>
+  </div>
+
+  {# Contacto directo: quien quiere ayudar no tiene que entrar al detalle #}
+  {% if solicitud.tiene_contacto and solicitud.estado == "ACTIVA" %}
+    <div class="tarjeta-contacto-rapido">
+      <p class="contacto-rapido-titulo">Puedes ayudar a {{ solicitud.alias }}:</p>
+      <div class="contacto-rapido-botones">
+        {% if solicitud.contacto_telefono %}
+          <a href="tel:{{ solicitud.contacto_telefono }}" class="btn btn-sm btn-contacto btn-llamar">
+            📞 Llamar
+          </a>
+          {% with numero=solicitud.contacto_telefono|whatsapp %}
+            {% if numero %}
+              <a href="https://wa.me/{{ numero }}" target="_blank" rel="noopener noreferrer"
+                 class="btn btn-sm btn-contacto btn-whatsapp">
+                💬 WhatsApp
+              </a>
+            {% endif %}
+          {% endwith %}
+        {% endif %}
+        {% if solicitud.contacto_email %}
+          <a href="mailto:{{ solicitud.contacto_email }}" class="btn btn-sm btn-contacto btn-correo">
+            ✉️ Correo
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="tarjeta-pie">
+    <small class="text-muted">Publicado {{ solicitud.creado|timesince }} atrás</small>
+    <a href="{{ solicitud.get_absolute_url }}" class="btn btn-sm btn-danger">Ver detalles</a>
+  </div>
+
+  <p class="tarjeta-nota">
+    Reportado por la comunidad · sin verificar · nunca envíes dinero
+  </p>
+</article>

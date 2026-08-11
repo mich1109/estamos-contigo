@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load ayuda_extras %}
+
+{% block titulo %}Oferta registrada · ESTAMOS CONTIGO{% endblock %}
+
+{% block contenido %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <div class="confirmacion confirmacion-verde">
+        <div class="confirmacion-icono">✅</div>
+        <h1>Tu oferta de ayuda fue registrada</h1>
+        <p class="confirmacion-texto">
+          Ya está publicada en el sitio y visible en el mapa. Gracias por
+          ayudar a tu comunidad.
+        </p>
+      </div>
+
+      {% if coincidencias %}
+        <div class="bloque-coincidencias">
+          <h2 class="h4">🤝 Personas que podrían necesitar tu ayuda</h2>
+          <p>
+            Encontramos {{ coincidencias|length }} necesidad{{ coincidencias|length|pluralize:"es" }}
+            que coincide{{ coincidencias|length|pluralize:"n" }} con lo que ofreces.
+            Puedes contactarlas directamente. <strong>Verifica siempre antes de
+            desplazarte o entregar algo.</strong>
+          </p>
+          {% for c in coincidencias %}
+            <a href="{% url 'solicitudes:detalle' c.solicitud.pk %}" class="coincidencia-item">
+              <span class="coincidencia-icono">{{ c.solicitud.urgencia|punto_urgencia }}</span>
+              <span class="coincidencia-texto">
+                <strong>{{ c.solicitud.get_tipo_ayuda_display }}</strong> —
+                {{ c.solicitud.personas_afectadas }} persona{{ c.solicitud.personas_afectadas|pluralize:"s" }}<br>
+                <small>{{ c.solicitud.zona }}, {{ c.solicitud.ciudad }} · Urgencia {{ c.solicitud.get_urgencia_display }}</small>
+              </span>
+              <span class="coincidencia-score">{{ c.score }}%</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <strong>Todavía nadie ha pedido este tipo de ayuda en tu ciudad.</strong>
+          Tu oferta queda publicada: cuando alguien registre una necesidad que
+          coincida, aparecerá aquí y esa persona podrá contactarte.
+        </div>
+      {% endif %}
+
+      <div class="bloque-siguiente">
+        <h2 class="h5">¿Qué sigue?</h2>
+        <ul>
+          <li>Guarda este enlace a tu publicación:
+            <a href="{{ oferta.get_absolute_url }}">{{ request.scheme }}://{{ request.get_host }}{{ oferta.get_absolute_url }}</a>
+          </li>
+          <li>Mantén tu teléfono disponible: las personas te contactarán directamente.</li>
+          <li>Puedes revisar el <a href="{% url 'solicitudes:lista' %}">listado de necesidades</a> y contactar tú mismo a quien lo necesite.</li>
+          <li>Cuando entregues la ayuda, avísale a la administración para que cierre tu publicación.</li>
+        </ul>
+      </div>
+
+      <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+        <a href="{% url 'solicitudes:lista' %}" class="btn btn-danger btn-lg">Ver quién necesita ayuda</a>
+        <a href="{% url 'mapa:mapa' %}" class="btn btn-primary btn-lg">Ver el mapa</a>
+        <a href="{% url 'core:inicio' %}" class="btn btn-outline-secondary btn-lg">Volver al inicio</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

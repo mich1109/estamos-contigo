@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Mapa · ESTAMOS CONTIGO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+{% endblock %}
+
+{% block contenido %}
+<div class="pagina-mapa">
+
+  <!-- Barra de filtros -->
+  <aside class="panel-mapa" id="panelMapa">
+    <div class="panel-mapa-cabecera">
+      <h1 class="h4 mb-1">🗺️ Mapa</h1>
+      <p class="small text-muted mb-0">
+        <span id="contadorMarcadores">0</span> ubicaciones en el mapa
+      </p>
+    </div>
+
+    <div class="panel-mapa-cuerpo">
+
+      <div class="filtro-grupo">
+        <h2 class="filtro-titulo">Ir a una zona</h2>
+        <div class="zonas-rapidas">
+          {% for zona in zonas %}
+            <button type="button" class="zona-boton"
+                    data-lat="{{ zona.lat }}" data-lng="{{ zona.lng }}"
+                    data-zoom="{{ zona.zoom }}" data-nombre="{{ zona.nombre }}">
+              <span class="zona-nombre">{{ zona.nombre }}</span>
+              <span class="zona-referencia">{{ zona.referencia }}</span>
+              <span class="zona-total">{{ zona.publicaciones }}</span>
+            </button>
+          {% endfor %}
+          <button type="button" class="zona-boton zona-todas" data-todas="1">
+            <span class="zona-nombre">🌎 Ver todo el país</span>
+          </button>
+        </div>
+        <p class="filtro-ayuda">
+          El número indica cuántas publicaciones ha hecho la comunidad en esa
+          zona. No es una medida de daños.
+        </p>
+      </div>
+
+      <div class="filtro-grupo">
+        <h2 class="filtro-titulo">Qué mostrar</h2>
+        <label class="filtro-check">
+          <input type="checkbox" class="filtro-categoria" value="solicitud" checked>
+          <span class="punto-leyenda punto-rojo"></span> Necesidades
+        </label>
+        <label class="filtro-check">
+          <input type="checkbox" class="filtro-categoria" value="ayuda" checked>
+          <span class="punto-leyenda punto-azul"></span> Ayudas disponibles
+        </label>
+        <label class="filtro-check">
+          <input type="checkbox" class="filtro-categoria" value="punto" checked>
+          <span class="punto-leyenda punto-morado"></span> Puntos de ayuda
+        </label>
+        <label class="filtro-check">
+          <input type="checkbox" class="filtro-categoria" value="reporte" checked>
+          <span class="punto-leyenda punto-amarillo"></span> Reportes
+        </label>
+      </div>
+
+      <div class="filtro-grupo">
+        <h2 class="filtro-titulo">Urgencia</h2>
+        <select id="filtroUrgencia" class="form-select">
+          <option value="">Todas</option>
+          {% for valor, etiqueta in urgencias %}
+            <option value="{{ valor }}">{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+        <p class="filtro-ayuda">Aplica a necesidades y reportes.</p>
+      </div>
+
+      <div class="filtro-grupo">
+        <h2 class="filtro-titulo">Tipo de ayuda</h2>
+        <select id="filtroTipo" class="form-select">
+          <option value="">Todos</option>
+          {% for valor, etiqueta in tipos %}
+            <option value="{{ valor }}">{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+        <p class="filtro-ayuda">Aplica a necesidades y ayudas.</p>
+      </div>
+
+      <div class="filtro-grupo">
+        <h2 class="filtro-titulo">Ciudad</h2>
+        <input type="text" id="filtroCiudad" class="form-control" list="listaCiudades"
+               placeholder="Todas las ciudades">
+        <datalist id="listaCiudades">
+          {% for ciudad in ciudades %}<option value="{{ ciudad }}">{% endfor %}
+        </datalist>
+      </div>
+
+      <div class="filtro-grupo">
+        <h2 class="filtro-titulo">Estado</h2>
+        <select id="filtroEstado" class="form-select">
+          <option value="ACTIVA">Activos</option>
+          <option value="RESUELTA">Resueltos</option>
+        </select>
+      </div>
+
+      <button type="button" id="btnLimpiarFiltros" class="btn btn-outline-secondary w-100 mb-2">
+        Limpiar filtros
+      </button>
+      <button type="button" id="btnMiUbicacionMapa" class="btn btn-outline-primary w-100">
+        🎯 Centrar en mi ubicación
+      </button>
+
+      <div class="leyenda">
+        <h2 class="filtro-titulo">Leyenda</h2>
+        <ul>
+          <li><span class="punto-leyenda punto-rojo"></span> Necesidad urgente (alta)</li>
+          <li><span class="punto-leyenda punto-naranja"></span> Necesidad media</li>
+          <li><span class="punto-leyenda punto-verde"></span> Necesidad baja</li>
+          <li><span class="punto-leyenda punto-azul"></span> Ayuda disponible</li>
+          <li><span class="punto-leyenda punto-morado"></span> Punto de ayuda</li>
+          <li><span class="punto-leyenda punto-amarillo"></span> Reporte comunitario</li>
+        </ul>
+      </div>
+
+      <div class="aviso-mapa">
+        <strong>🔎 Verifica antes de actuar.</strong>
+        Toda esta información la publicó la comunidad y no está verificada.
+        Confirma por teléfono antes de desplazarte.
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mapa -->
+  <div class="contenedor-mapa">
+    <button type="button" id="btnAbrirFiltros" class="btn btn-primary btn-filtros-movil">
+      ☰ Filtros
+    </button>
+    <div id="mapaPrincipal"
+         data-url-marcadores="{% url 'mapa:marcadores' %}"
+         data-lat="{{ centro.lat }}"
+         data-lng="{{ centro.lng }}"
+         data-zoom="{{ centro.zoom }}"></div>
+    <div id="cargandoMapa" class="cargando-mapa">Cargando ubicaciones…</div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="{% static 'js/mapa.js' %}"></script>
+{% endblock %}

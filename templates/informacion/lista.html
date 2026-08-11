@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block titulo %}Información oficial · ESTAMOS CONTIGO{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+
+  <div class="cabecera-seccion cabecera-info">
+    <div>
+      <h1>📢 Información oficial</h1>
+      <p class="mb-0">
+        Enlaces a información publicada por instituciones oficiales.
+      </p>
+    </div>
+  </div>
+
+  <div class="alert alert-primary aviso-oficial">
+    <strong>ℹ️ Consulta siempre fuentes oficiales para información de emergencia.</strong>
+    Esta sección solo reúne enlaces a lo que publican las instituciones. Esta
+    plataforma <u>no genera información oficial propia</u> y no modifica el
+    contenido de las fuentes: cada enlace te lleva directamente a la página de
+    la entidad para que puedas verificarla tú mismo.
+  </div>
+
+  <!-- Lineas oficiales de emergencia -->
+  <section class="bloque-lineas">
+    <h2 class="h4">📞 Líneas nacionales de emergencia</h2>
+    <div class="row g-2">
+      <div class="col-6 col-md-2"><a href="tel:123" class="btn-emergencia">123<small>Emergencias</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:119" class="btn-emergencia">119<small>Bomberos</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:132" class="btn-emergencia">132<small>Cruz Roja</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:144" class="btn-emergencia">144<small>Defensa Civil</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:125" class="btn-emergencia">125<small>Ambulancia</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:112" class="btn-emergencia">112<small>Policía</small></a></div>
+    </div>
+  </section>
+
+  <!-- Filtros -->
+  <form method="get" class="panel-filtros">
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-4">
+        <label for="f-categoria" class="form-label">Categoría</label>
+        <select id="f-categoria" name="categoria" class="form-select">
+          <option value="">Todas</option>
+          {% for valor, etiqueta in categorias %}
+            <option value="{{ valor }}" {% if filtros.categoria == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-4">
+        <label for="f-institucion" class="form-label">Institución</label>
+        <input type="text" id="f-institucion" name="institucion" value="{{ filtros.institucion }}"
+               class="form-control" placeholder="Todas">
+      </div>
+      <div class="col-12 col-md-4 d-grid gap-2 d-md-flex">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <a href="{% url 'informacion:lista' %}" class="btn btn-outline-secondary">Limpiar</a>
+      </div>
+    </div>
+  </form>
+
+  <!-- Entradas -->
+  {% if entradas %}
+    <div class="row g-3">
+      {% for entrada in entradas %}
+        <div class="col-md-6">
+          <article class="tarjeta tarjeta-info {% if entrada.destacada %}tarjeta-destacada{% endif %}">
+            <div class="tarjeta-cabecera">
+              <span class="tarjeta-icono">{{ entrada.icono }}</span>
+              <span class="insignia-categoria">{{ entrada.get_categoria_display }}</span>
+            </div>
+
+            <h3 class="tarjeta-titulo">{{ entrada.titulo }}</h3>
+            <p class="tarjeta-institucion">🏛️ {{ entrada.institucion }}</p>
+            <p class="tarjeta-descripcion">{{ entrada.descripcion }}</p>
+
+            <div class="tarjeta-pie">
+              <small class="text-muted">{{ entrada.fecha|date:"d/m/Y" }}</small>
+              <a href="{{ entrada.url }}" target="_blank" rel="noopener noreferrer"
+                 class="btn btn-sm btn-primary">
+                Ir a la fuente oficial ↗
+              </a>
+            </div>
+          </article>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="vacio">
+      <p class="vacio-icono">📢</p>
+      <h2>Todavía no hay enlaces oficiales publicados</h2>
+      <p>
+        La administración de la plataforma aún no ha agregado enlaces en esta
+        categoría. Mientras tanto, consulta directamente los sitios de las
+        instituciones oficiales y las líneas de emergencia de arriba.
+      </p>
+      <a href="{% url 'core:inicio' %}" class="btn btn-primary btn-lg">Volver al inicio</a>
+    </div>
+  {% endif %}
+
+  <div class="alert alert-warning mt-4">
+    <strong>Recuerda:</strong> el resto del contenido de esta plataforma
+    (necesidades, ayudas, puntos y reportes) lo publica la comunidad y
+    <u>no está verificado</u>. Solo esta sección enlaza a fuentes oficiales.
+  </div>
+
+</div>
+{% endblock %}

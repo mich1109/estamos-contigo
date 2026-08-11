@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Registrar un punto de ayuda · ESTAMOS CONTIGO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <div class="cabecera-formulario cabecera-puntos">
+        <h1>📍 Registrar un punto de ayuda</h1>
+        <p class="mb-0">
+          ¿Conoces un lugar donde estén ayudando? Regístralo para que otras
+          personas lo encuentren. <strong>No necesitas registrarte.</strong>
+        </p>
+      </div>
+
+      <div class="alert alert-warning">
+        <strong>Importante:</strong> registra solo lugares que realmente estén
+        operando y de los que tengas información directa. Un punto mal reportado
+        hace que alguien se desplace en vano durante una emergencia.
+        Tu registro aparecerá marcado como <em>información de la comunidad</em>
+        hasta que la administración lo verifique.
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+          {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data" novalidate class="formulario">
+        {% csrf_token %}
+
+        {# Campo trampa anti-bots: invisible para las personas #}
+        <div class="campo-trampa" aria-hidden="true">{{ form.website }}</div>
+
+
+        <fieldset>
+          <legend>1. Qué lugar es</legend>
+          {% include "parciales/campo.html" with campo=form.nombre %}
+          {% include "parciales/campo.html" with campo=form.tipo %}
+        </fieldset>
+
+        <fieldset>
+          <legend>2. Dónde queda</legend>
+          <div class="row">
+            <div class="col-md-6">{% include "parciales/campo.html" with campo=form.ciudad %}</div>
+            <div class="col-md-6">{% include "parciales/campo.html" with campo=form.zona %}</div>
+          </div>
+          {% include "parciales/campo.html" with campo=form.direccion %}
+          {% include "parciales/selector_mapa.html" %}
+        </fieldset>
+
+        <fieldset>
+          <legend>3. Cómo funciona</legend>
+          {% include "parciales/campo.html" with campo=form.horario %}
+          {% include "parciales/campo.html" with campo=form.descripcion %}
+          {% include "parciales/selector_foto.html" with campo=form.foto %}
+          {% include "parciales/campo.html" with campo=form.disponibilidad %}
+          {% include "parciales/campo.html" with campo=form.contacto %}
+        </fieldset>
+
+        <fieldset>
+          <legend>4. De dónde salió esta información</legend>
+          <p class="text-muted small">
+            Esto se muestra públicamente y ayuda a que otros sepan qué tan
+            confiable es el dato.
+          </p>
+          {% include "parciales/campo.html" with campo=form.fuente_informacion %}
+        </fieldset>
+
+        <button type="submit" class="btn btn-purple btn-lg w-100 boton-enviar">
+          Registrar el punto de ayuda
+        </button>
+        <p class="text-center text-muted small mt-2">
+          Al publicar aceptas el <a href="{% url 'core:aviso_legal' %}">aviso legal</a>.
+        </p>
+      </form>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/selector-mapa.js' %}"></script>
+<script src="{% static 'js/selector-foto.js' %}"></script>
+{% endblock %}

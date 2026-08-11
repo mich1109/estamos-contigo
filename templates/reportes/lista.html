@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load ayuda_extras %}
+
+{% block titulo %}Reportes comunitarios · ESTAMOS CONTIGO{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+
+  <div class="cabecera-seccion cabecera-reportes">
+    <div>
+      <h1>📢 Reportes de la comunidad</h1>
+      <p class="mb-0">
+        {{ total }} situación{{ total|pluralize:"es" }} reportada{{ total|pluralize:"s" }}
+        por personas de la comunidad.
+      </p>
+    </div>
+    <a href="{% url 'reportes:crear' %}" class="btn btn-light btn-lg">+ Reportar una situación</a>
+  </div>
+
+  <div class="aviso-verificacion">
+    <strong>🔎 Todos estos reportes fueron realizados por usuarios de la comunidad.</strong>
+    No han sido verificados por ninguna autoridad ni por la administración de la
+    plataforma. Son observaciones de personas, no partes oficiales.
+    <u>Si la situación es una emergencia, repórtala también al</u>
+    <a href="tel:123">123</a>.
+  </div>
+
+  <form method="get" class="panel-filtros">
+    <div class="row g-2 align-items-end">
+      <div class="col-6 col-md-3">
+        <label for="f-ciudad" class="form-label">Ciudad</label>
+        <input type="text" id="f-ciudad" name="ciudad" value="{{ filtros.ciudad }}"
+               class="form-control" placeholder="Todas">
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="f-tipo" class="form-label">Tipo de reporte</label>
+        <select id="f-tipo" name="tipo" class="form-select">
+          <option value="">Todos</option>
+          {% for valor, etiqueta in tipos %}
+            <option value="{{ valor }}" {% if filtros.tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="f-urgencia" class="form-label">Urgencia</label>
+        <select id="f-urgencia" name="urgencia" class="form-select">
+          <option value="">Todas</option>
+          {% for valor, etiqueta in urgencias %}
+            <option value="{{ valor }}" {% if filtros.urgencia == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="f-estado" class="form-label">Estado</label>
+        <select id="f-estado" name="estado" class="form-select">
+          {% for valor, etiqueta in estados %}
+            <option value="{{ valor }}" {% if filtros.estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-2 d-grid gap-2">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <a href="{% url 'reportes:lista' %}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+      </div>
+    </div>
+  </form>
+
+  {% if pagina.object_list %}
+    <div class="row g-3">
+      {% for reporte in pagina %}
+        <div class="col-md-6 col-lg-4">
+          <article class="tarjeta tarjeta-reporte {{ reporte.urgencia|clase_urgencia }}">
+            <div class="tarjeta-cabecera">
+              <span class="tarjeta-icono">{{ reporte.icono }}</span>
+              <span class="insignia-urgencia {{ reporte.urgencia|clase_urgencia }}">
+                {{ reporte.urgencia|punto_urgencia }} {{ reporte.get_urgencia_display }}
+              </span>
+            </div>
+
+            <h3 class="tarjeta-titulo">{{ reporte.get_tipo_reporte_display }}</h3>
+
+            {% if reporte.foto %}
+              <a href="{{ reporte.get_absolute_url }}" class="tarjeta-foto-enlace">
+                <img src="{{ reporte.foto.url }}" alt="Foto de la situación reportada"
+                     class="tarjeta-foto" loading="lazy">
+              </a>
+            {% endif %}
+
+            <p class="tarjeta-ubicacion">📍 {{ reporte.zona }}, {{ reporte.ciudad }}</p>
+            <p class="tarjeta-descripcion">{{ reporte.descripcion|truncatechars:110 }}</p>
+
+            <div class="tarjeta-datos">
+              <span class="insignia-estado-reporte">
+                {{ reporte.punto_estado }} {{ reporte.estado_publico }}
+              </span>
+            </div>
+
+            <div class="tarjeta-pie">
+              <small class="text-muted">{{ reporte.creado|timesince }} atrás</small>
+              <a href="{{ reporte.get_absolute_url }}" class="btn btn-sm btn-warning">Ver reporte</a>
+            </div>
+
+            <p class="tarjeta-nota">Reporte realizado por un usuario de la comunidad</p>
+          </article>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if pagina.has_other_pages %}
+      <nav class="mt-4" aria-label="Paginación">
+        <ul class="pagination justify-content-center">
+          {% if pagina.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% query_actual request page=pagina.previous_page_number %}">Anterior</a>
+            </li>
+          {% endif %}
+          <li class="page-item disabled">
+            <span class="page-link">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+          </li>
+          {% if pagina.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?{% query_actual request page=pagina.next_page_number %}">Siguiente</a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+
+  {% else %}
+    <div class="vacio">
+      <p class="vacio-icono">📢</p>
+      <h2>No hay reportes que coincidan con tu búsqueda</h2>
+      <p>¿Viste una situación que otros deberían conocer? Repórtala.</p>
+      <a href="{% url 'reportes:crear' %}" class="btn btn-warning btn-lg">Reportar una situación</a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% load ayuda_extras static %}
+
+{% block titulo %}Panel · ESTAMOS CONTIGO{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid py-4 panel-admin">
+
+  <div class="cabecera-panel">
+    <div>
+      <h1>⚙️ Panel de administración</h1>
+      <p class="mb-0">
+        Hola {{ user.get_username }}. Aquí cierras los casos que ya recibieron
+        ayuda y retiras el contenido falso.
+      </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'panel:moderacion' %}" class="btn btn-light">🗂️ Bandeja de moderación</a>
+      <a href="/admin/" class="btn btn-outline-light">Django Admin</a>
+    </div>
+  </div>
+
+  <!-- Metricas -->
+  <section class="metricas">
+    <div class="row g-3">
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="metrica metrica-roja">
+          <div class="metrica-icono">🆘</div>
+          <div class="metrica-numero">{{ metricas.solicitudes_activas }}</div>
+          <div class="metrica-etiqueta">Solicitudes activas</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="metrica metrica-verde">
+          <div class="metrica-icono">🤝</div>
+          <div class="metrica-numero">{{ metricas.ayudas_activas }}</div>
+          <div class="metrica-etiqueta">Ayudas disponibles</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="metrica metrica-morada">
+          <div class="metrica-icono">📍</div>
+          <div class="metrica-numero">{{ metricas.puntos_activos }}</div>
+          <div class="metrica-etiqueta">Puntos de ayuda</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="metrica metrica-amarilla">
+          <div class="metrica-icono">📢</div>
+          <div class="metrica-numero">{{ metricas.reportes_abiertos }}</div>
+          <div class="metrica-etiqueta">Reportes abiertos</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="metrica metrica-azul">
+          <div class="metrica-icono">✅</div>
+          <div class="metrica-numero">{{ metricas.casos_resueltos }}</div>
+          <div class="metrica-etiqueta">Casos resueltos</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="metrica metrica-gris">
+          <div class="metrica-icono">🤝</div>
+          <div class="metrica-numero">{{ metricas.coincidencias }}</div>
+          <div class="metrica-etiqueta">Coincidencias detectadas</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+      <div class="col-md-6">
+        <div class="metrica-secundaria">
+          🚫 <strong>{{ metricas.bloqueados }}</strong> registro(s) bloqueado(s) y retirado(s) del sitio
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="metrica-secundaria">
+          📢 <strong>{{ metricas.enlaces_oficiales }}</strong> enlace(s) oficial(es) publicado(s)
+          · <a href="/admin/informacion/informacionoficial/add/">Agregar uno nuevo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Graficos -->
+  <section class="row g-3 mt-2">
+    <div class="col-lg-4">
+      <div class="tarjeta-panel">
+        <h2 class="h6">Necesidades por tipo de ayuda</h2>
+        <canvas id="graficoTipos" height="220"></canvas>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="tarjeta-panel">
+        <h2 class="h6">Necesidades por urgencia</h2>
+        <canvas id="graficoUrgencia" height="220"></canvas>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="tarjeta-panel">
+        <h2 class="h6">Publicaciones de los últimos 7 días</h2>
+        <canvas id="graficoActividad" height="220"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- Solicitudes urgentes -->
+  {% if solicitudes_urgentes %}
+  <section class="mt-4">
+    <div class="tarjeta-panel">
+      <h2 class="h5 texto-rojo">🔴 Necesidades de urgencia alta</h2>
+      <p class="text-muted small">Estas son las que requieren atención primero.</p>
+      {% include "panel/parcial_tabla_registros.html" with registros=solicitudes_urgentes modelo="solicitud" columna="urgencia" %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Coincidencias -->
+  {% if coincidencias_recientes %}
+  <section class="mt-4">
+    <div class="tarjeta-panel">
+      <h2 class="h5">🤝 Coincidencias detectadas</h2>
+      <p class="text-muted small">
+        Necesidades y ayudas que el sistema emparejó por ciudad y tipo.
+        Cuando confirmes que la ayuda llegó, cierra ambos registros.
+      </p>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Necesidad</th>
+              <th>Ayuda disponible</th>
+              <th>Coincidencia</th>
+              <th>Ciudad</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in coincidencias_recientes %}
+            <tr>
+              <td>
+                <a href="{% url 'solicitudes:detalle' c.solicitud.pk %}">
+                  {{ c.solicitud.urgencia|punto_urgencia }} {{ c.solicitud.get_tipo_ayuda_display }}
+                </a>
+                <br><small class="text-muted">{{ c.solicitud.personas_afectadas }} persona(s) · {{ c.solicitud.zona }}</small>
+              </td>
+              <td>
+                <a href="{% url 'ayudas:detalle' c.ayuda.pk %}">
+                  {{ c.ayuda.tipo_ayuda|icono_tipo }} {{ c.ayuda.cantidad }}
+                </a>
+                <br><small class="text-muted">{{ c.ayuda.alias }} · {{ c.ayuda.zona }}</small>
+              </td>
+              <td><span class="insignia-score">{{ c.score }}%</span></td>
+              <td>{{ c.solicitud.ciudad }}</td>
+              <td>
+                <form method="post" action="{% url 'panel:cambiar_estado' 'solicitud' c.solicitud.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="estado" value="RESUELTA">
+                  <input type="hidden" name="volver" value="{% url 'panel:dashboard' %}">
+                  <button type="submit" class="btn btn-sm btn-success">✅ Cerrar caso</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Listas recientes -->
+  <section class="row g-3 mt-2">
+    <div class="col-lg-6">
+      <div class="tarjeta-panel">
+        <h2 class="h5">🆘 Solicitudes recientes</h2>
+        {% include "panel/parcial_tabla_registros.html" with registros=solicitudes_recientes modelo="solicitud" columna="urgencia" %}
+        <a href="{% url 'panel:moderacion' %}?tipo=solicitud" class="btn btn-sm btn-outline-primary">Ver todas</a>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="tarjeta-panel">
+        <h2 class="h5">🤝 Ayudas recientes</h2>
+        {% include "panel/parcial_tabla_registros.html" with registros=ayudas_recientes modelo="ayuda" columna="cantidad" %}
+        <a href="{% url 'panel:moderacion' %}?tipo=ayuda" class="btn btn-sm btn-outline-primary">Ver todas</a>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="tarjeta-panel">
+        <h2 class="h5">📢 Reportes recientes</h2>
+        {% include "panel/parcial_tabla_registros.html" with registros=reportes_recientes modelo="reporte" columna="urgencia" %}
+        <a href="{% url 'panel:moderacion' %}?tipo=reporte" class="btn btn-sm btn-outline-primary">Ver todos</a>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="tarjeta-panel">
+        <h2 class="h5">📍 Puntos sin verificar</h2>
+        <p class="text-muted small">
+          Verifica solo los que hayas confirmado que existen y operan.
+        </p>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle">
+            <tbody>
+              {% for punto in puntos_sin_verificar %}
+              <tr>
+                <td>
+                  <a href="{% url 'puntos:detalle' punto.pk %}">{{ punto.nombre }}</a>
+                  <br><small class="text-muted">{{ punto.get_tipo_display }} · {{ punto.ciudad }}</small>
+                </td>
+                <td class="text-end">
+                  <form method="post" action="{% url 'panel:verificar_punto' punto.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="verificado" value="1">
+                    <input type="hidden" name="volver" value="{% url 'panel:dashboard' %}">
+                    <button type="submit" class="btn btn-sm btn-outline-success">✅ Verificar</button>
+                  </form>
+                  <form method="post" action="{% url 'panel:cambiar_estado' 'punto' punto.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="estado" value="BLOQUEADA">
+                    <input type="hidden" name="volver" value="{% url 'panel:dashboard' %}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">🚫</button>
+                  </form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td class="text-muted">No hay puntos pendientes de verificar.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+{{ grafico_tipos|json_script:"datosTipos" }}
+{{ grafico_urgencia|json_script:"datosUrgencia" }}
+{{ grafico_actividad|json_script:"datosActividad" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/panel.js' %}"></script>
+{% endblock %}

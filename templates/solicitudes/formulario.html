@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Necesito ayuda · ESTAMOS CONTIGO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <div class="cabecera-formulario cabecera-solicitudes">
+        <h1>🆘 Necesito ayuda</h1>
+        <p class="mb-0">
+          Cuéntanos qué necesitas. Tu publicación aparecerá de inmediato en el
+          sitio y en el mapa. <strong>No necesitas registrarte.</strong>
+        </p>
+      </div>
+
+      <div class="alert alert-danger">
+        <strong>⚠️ Si hay personas atrapadas, heridas o en peligro inmediato,
+        llama primero al <a href="tel:123">123</a>.</strong>
+        Este formulario es para organizar ayuda comunitaria, no para pedir rescate.
+      </div>
+
+      <div class="alert alert-warning">
+        <strong>Ten en cuenta:</strong> los datos de contacto que escribas serán
+        <strong>visibles públicamente</strong>. Puedes usar un alias en lugar de
+        tu nombre real. Una vez publiques no podrás editar ni borrar tú mismo la
+        publicación, porque el sitio no maneja cuentas de usuario.
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+          {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data" novalidate class="formulario">
+        {% csrf_token %}
+
+        {# Campo trampa anti-bots: invisible para las personas #}
+        <div class="campo-trampa" aria-hidden="true">{{ form.website }}</div>
+
+
+        <fieldset>
+          <legend>1. Quién eres</legend>
+          {% include "parciales/campo.html" with campo=form.alias %}
+        </fieldset>
+
+        <fieldset>
+          <legend>2. Dónde estás</legend>
+          <div class="row">
+            <div class="col-md-6">{% include "parciales/campo.html" with campo=form.ciudad %}</div>
+            <div class="col-md-6">{% include "parciales/campo.html" with campo=form.zona %}</div>
+          </div>
+          {% include "parciales/selector_mapa.html" %}
+        </fieldset>
+
+        <fieldset>
+          <legend>3. Qué necesitas</legend>
+          <div class="row">
+            <div class="col-md-6">{% include "parciales/campo.html" with campo=form.tipo_ayuda %}</div>
+            <div class="col-md-6">{% include "parciales/campo.html" with campo=form.personas_afectadas %}</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">
+              {{ form.urgencia.label }} <span class="obligatorio">*</span>
+            </label>
+            <div class="selector-urgencia">
+              {% for valor, etiqueta in form.fields.urgencia.choices %}
+                <label class="opcion-urgencia opcion-{{ valor|lower }}">
+                  <input type="radio" name="urgencia" value="{{ valor }}"
+                         {% if form.urgencia.value == valor %}checked{% endif %}>
+                  <span class="opcion-punto">
+                    {% if valor == "ALTA" %}🔴{% elif valor == "MEDIA" %}🟠{% else %}🟢{% endif %}
+                  </span>
+                  <span class="opcion-texto">{{ etiqueta }}</span>
+                  <span class="opcion-ayuda">
+                    {% if valor == "ALTA" %}Lo necesito hoy mismo
+                    {% elif valor == "MEDIA" %}Lo necesito pronto
+                    {% else %}Puedo esperar unos días{% endif %}
+                  </span>
+                </label>
+              {% endfor %}
+            </div>
+            {% for error in form.urgencia.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          {% include "parciales/campo.html" with campo=form.descripcion %}
+          {% include "parciales/selector_foto.html" with campo=form.foto %}
+        </fieldset>
+
+        <fieldset>
+          <legend>4. Cómo pueden contactarte</legend>
+          <p class="text-muted small">
+            Escribe al menos uno. Será visible para cualquier persona que entre al sitio.
+          </p>
+          <div class="row">
+            <div class="col-md-6">{% include "parciales/campo.html" with campo=form.contacto_telefono %}</div>
+            <div class="col-md-6">{% include "parciales/campo.html" with campo=form.contacto_email %}</div>
+          </div>
+        </fieldset>
+
+        <button type="submit" class="btn btn-danger btn-lg w-100 boton-enviar">
+          Publicar mi solicitud
+        </button>
+        <p class="text-center text-muted small mt-2">
+          Al publicar aceptas el <a href="{% url 'core:aviso_legal' %}">aviso legal</a>.
+        </p>
+      </form>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/selector-mapa.js' %}"></script>
+<script src="{% static 'js/selector-foto.js' %}"></script>
+{% endblock %}

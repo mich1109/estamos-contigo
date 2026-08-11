@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load ayuda_extras %}
+
+{% block titulo %}Solicitud registrada · ESTAMOS CONTIGO{% endblock %}
+
+{% block contenido %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <div class="confirmacion">
+        <div class="confirmacion-icono">✅</div>
+        <h1>Tu solicitud fue registrada correctamente</h1>
+        <p class="confirmacion-texto">
+          Ya está publicada en el sitio y visible en el mapa para que las
+          personas cercanas puedan encontrarte.
+        </p>
+      </div>
+
+      <div class="alert alert-danger">
+        <strong>Recuerda:</strong> esta plataforma no es un servicio de
+        emergencia. Si tu situación es de peligro inmediato, llama al
+        <a href="tel:123">123</a> ahora mismo.
+      </div>
+
+      {% if coincidencias %}
+        <div class="bloque-coincidencias">
+          <h2 class="h4">🤝 Posibles coincidencias encontradas</h2>
+          <p>
+            Encontramos {{ coincidencias|length }} ayuda{{ coincidencias|length|pluralize:"s" }}
+            disponible{{ coincidencias|length|pluralize:"s" }} que podría{{ coincidencias|length|pluralize:"n" }}
+            servirte. Es una sugerencia automática basada en la ciudad y el tipo
+            de ayuda: <strong>verifica siempre antes de acordar algo</strong>.
+          </p>
+          {% for c in coincidencias %}
+            <a href="{% url 'ayudas:detalle' c.ayuda.pk %}" class="coincidencia-item">
+              <span class="coincidencia-icono">{{ c.ayuda.tipo_ayuda|icono_tipo }}</span>
+              <span class="coincidencia-texto">
+                <strong>{{ c.ayuda.get_tipo_ayuda_display }}</strong> — {{ c.ayuda.cantidad }}<br>
+                <small>{{ c.ayuda.zona }}, {{ c.ayuda.ciudad }} · Disponibilidad: {{ c.ayuda.get_disponibilidad_display }}</small>
+              </span>
+              <span class="coincidencia-score">{{ c.score }}%</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <strong>Todavía no hay ayudas que coincidan con lo que pediste.</strong>
+          Tu solicitud queda publicada: cuando alguien registre una ayuda de este
+          tipo en tu ciudad, aparecerá como posible coincidencia en tu página.
+        </div>
+      {% endif %}
+
+      <div class="bloque-siguiente">
+        <h2 class="h5">¿Qué sigue?</h2>
+        <ul>
+          <li>Guarda este enlace para volver a tu publicación:
+            <a href="{{ solicitud.get_absolute_url }}">{{ request.scheme }}://{{ request.get_host }}{{ solicitud.get_absolute_url }}</a>
+          </li>
+          <li>Mantén tu teléfono disponible: las personas te contactarán directamente.</li>
+          <li>Cuando recibas la ayuda, avísale a la administración del sitio para que cierre tu caso.</li>
+          <li><strong>Verifica siempre</strong> la identidad de quien te contacte antes de acordar un encuentro.</li>
+        </ul>
+      </div>
+
+      <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+        <a href="{{ solicitud.get_absolute_url }}" class="btn btn-danger btn-lg">Ver mi publicación</a>
+        <a href="{% url 'mapa:mapa' %}" class="btn btn-primary btn-lg">Ver el mapa</a>
+        <a href="{% url 'core:inicio' %}" class="btn btn-outline-secondary btn-lg">Volver al inicio</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

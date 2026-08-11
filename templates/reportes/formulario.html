@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Reportar una situación · ESTAMOS CONTIGO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <div class="cabecera-formulario cabecera-reportes">
+        <h1>📢 Reportar una situación</h1>
+        <p class="mb-0">
+          Cuéntale a la comunidad qué está pasando en tu zona.
+          <strong>Puedes reportar de forma anónima.</strong>
+        </p>
+      </div>
+
+      <div class="alert alert-danger">
+        <strong>⚠️ Esto no reemplaza una llamada de emergencia.</strong>
+        Si hay personas atrapadas, heridas o en peligro, llama primero al
+        <a href="tel:123">123</a>. Este reporte sirve para que la comunidad se
+        organice, y nadie lo está vigilando las 24 horas.
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+          {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data" novalidate class="formulario">
+        {% csrf_token %}
+
+        {# Campo trampa anti-bots: invisible para las personas #}
+        <div class="campo-trampa" aria-hidden="true">{{ form.website }}</div>
+
+
+        <fieldset>
+          <legend>1. Qué está pasando</legend>
+          {% include "parciales/campo.html" with campo=form.tipo_reporte %}
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">
+              {{ form.urgencia.label }} <span class="obligatorio">*</span>
+            </label>
+            <div class="selector-urgencia">
+              {% for valor, etiqueta in form.fields.urgencia.choices %}
+                <label class="opcion-urgencia opcion-{{ valor|lower }}">
+                  <input type="radio" name="urgencia" value="{{ valor }}"
+                         {% if form.urgencia.value == valor %}checked{% endif %}>
+                  <span class="opcion-punto">
+                    {% if valor == "ALTA" %}🔴{% elif valor == "MEDIA" %}🟠{% else %}🟢{% endif %}
+                  </span>
+                  <span class="opcion-texto">{{ etiqueta }}</span>
+                  <span class="opcion-ayuda">
+                    {% if valor == "ALTA" %}Requiere atención hoy
+                    {% elif valor == "MEDIA" %}Requiere atención pronto
+                    {% else %}Es informativo{% endif %}
+                  </span>
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          {% include "parciales/campo.html" with campo=form.descripcion %}
+          {% include "parciales/selector_foto.html" with campo=form.foto %}
+        </fieldset>
+
+        <fieldset>
+          <legend>2. Dónde ocurre</legend>
+          <div class="row">
+            <div class="col-md-6">{% include "parciales/campo.html" with campo=form.ciudad %}</div>
+            <div class="col-md-6">{% include "parciales/campo.html" with campo=form.zona %}</div>
+          </div>
+          {% include "parciales/selector_mapa.html" %}
+        </fieldset>
+
+        <fieldset>
+          <legend>3. Quién reporta (opcional)</legend>
+          <p class="text-muted small">
+            Puedes dejarlo vacío y el reporte aparecerá como anónimo.
+          </p>
+          {% include "parciales/campo.html" with campo=form.reportado_por %}
+        </fieldset>
+
+        <button type="submit" class="btn btn-warning btn-lg w-100 boton-enviar">
+          Publicar el reporte
+        </button>
+        <p class="text-center text-muted small mt-2">
+          Al publicar aceptas el <a href="{% url 'core:aviso_legal' %}">aviso legal</a>.
+          Tu reporte aparecerá marcado como información de la comunidad, sin verificar.
+        </p>
+      </form>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/selector-mapa.js' %}"></script>
+<script src="{% static 'js/selector-foto.js' %}"></script>
+{% endblock %}

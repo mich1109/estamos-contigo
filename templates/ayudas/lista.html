@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load ayuda_extras %}
+
+{% block titulo %}Ayudas disponibles · ESTAMOS CONTIGO{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+
+  <div class="cabecera-seccion cabecera-ayudas">
+    <div>
+      <h1>🤝 Personas que ofrecen ayuda</h1>
+      <p class="mb-0">
+        {{ total }} ayuda{{ total|pluralize:"s" }} disponible{{ total|pluralize:"s" }}
+        registrada{{ total|pluralize:"s" }} por la comunidad.
+      </p>
+    </div>
+    <a href="{% url 'ayudas:crear' %}" class="btn btn-light btn-lg">+ Ofrecer ayuda</a>
+  </div>
+
+  {% include "parciales/aviso_verificacion.html" %}
+
+  <form method="get" class="panel-filtros">
+    <div class="row g-2 align-items-end">
+      <div class="col-6 col-md-3">
+        <label for="f-ciudad" class="form-label">Ciudad</label>
+        <input type="text" id="f-ciudad" name="ciudad" value="{{ filtros.ciudad }}"
+               class="form-control" placeholder="Todas">
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="f-tipo" class="form-label">Tipo de ayuda</label>
+        <select id="f-tipo" name="tipo" class="form-select">
+          <option value="">Todos</option>
+          {% for valor, etiqueta in tipos %}
+            <option value="{{ valor }}" {% if filtros.tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="f-disp" class="form-label">Disponibilidad</label>
+        <select id="f-disp" name="disponibilidad" class="form-select">
+          <option value="">Todas</option>
+          {% for valor, etiqueta in disponibilidades %}
+            <option value="{{ valor }}" {% if filtros.disponibilidad == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="f-estado" class="form-label">Estado</label>
+        <select id="f-estado" name="estado" class="form-select">
+          {% for valor, etiqueta in estados %}
+            <option value="{{ valor }}" {% if filtros.estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-2 d-grid gap-2">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <a href="{% url 'ayudas:lista' %}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+      </div>
+    </div>
+  </form>
+
+  {% if pagina.object_list %}
+    <div class="row g-3">
+      {% for oferta in pagina %}
+        <div class="col-md-6 col-lg-4">
+          {% include "ayudas/parcial_tarjeta.html" with oferta=oferta %}
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if pagina.has_other_pages %}
+      <nav class="mt-4" aria-label="Paginación">
+        <ul class="pagination justify-content-center">
+          {% if pagina.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% query_actual request page=pagina.previous_page_number %}">Anterior</a>
+            </li>
+          {% endif %}
+          <li class="page-item disabled">
+            <span class="page-link">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+          </li>
+          {% if pagina.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?{% query_actual request page=pagina.next_page_number %}">Siguiente</a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+
+  {% else %}
+    <div class="vacio">
+      <p class="vacio-icono">🤝</p>
+      <h2>No hay ayudas que coincidan con tu búsqueda</h2>
+      <p>Prueba quitando algún filtro, o sé la primera persona en ofrecer ayuda.</p>
+      <a href="{% url 'ayudas:crear' %}" class="btn btn-success btn-lg">Ofrecer ayuda</a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

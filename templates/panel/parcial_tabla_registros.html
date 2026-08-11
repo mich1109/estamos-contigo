@@ -1,0 +1,64 @@
+{% load ayuda_extras %}
+{% comment %}
+Tabla compacta de registros con acciones de cerrar y bloquear.
+Parametros:
+  registros  lista de objetos
+  modelo     "solicitud" | "ayuda" | "punto" | "reporte"
+  columna    "urgencia" o "cantidad", segun lo que tenga sentido mostrar
+{% endcomment %}
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <tbody>
+      {% for registro in registros %}
+      <tr>
+        <td>
+          <a href="{{ registro.get_absolute_url }}">
+            {% if modelo == "solicitud" %}
+              {{ registro.tipo_ayuda|icono_tipo }} {{ registro.get_tipo_ayuda_display }}
+            {% elif modelo == "ayuda" %}
+              {{ registro.tipo_ayuda|icono_tipo }} {{ registro.get_tipo_ayuda_display }}
+            {% elif modelo == "reporte" %}
+              {{ registro.icono }} {{ registro.get_tipo_reporte_display }}
+            {% else %}
+              📍 {{ registro.nombre }}
+            {% endif %}
+          </a>
+          <br>
+          <small class="text-muted">
+            {{ registro.zona }}, {{ registro.ciudad }} · {{ registro.creado|timesince }} atrás
+          </small>
+        </td>
+        <td class="text-nowrap">
+          {% if columna == "urgencia" %}
+            <span class="insignia-urgencia {{ registro.urgencia|clase_urgencia }}">
+              {{ registro.urgencia|punto_urgencia }} {{ registro.get_urgencia_display }}
+            </span>
+          {% elif columna == "cantidad" %}
+            <small>{{ registro.cantidad|truncatechars:28 }}</small>
+          {% endif %}
+        </td>
+        <td class="text-end text-nowrap">
+          <form method="post" action="{% url 'panel:cambiar_estado' modelo registro.pk %}" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="estado" value="RESUELTA">
+            <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+            <button type="submit" class="btn btn-sm btn-success" title="Cerrar: la ayuda ya llegó">
+              ✅ Cerrar
+            </button>
+          </form>
+          <form method="post" action="{% url 'panel:cambiar_estado' modelo registro.pk %}" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="estado" value="BLOQUEADA">
+            <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+            <button type="submit" class="btn btn-sm btn-outline-danger" title="Bloquear: contenido falso o inapropiado">
+              🚫
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td class="text-muted">No hay registros.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% load ayuda_extras static %}
+
+{% block titulo %}{{ solicitud.get_tipo_ayuda_display }} en {{ solicitud.ciudad }} · ESTAMOS CONTIGO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+  <a href="{% url 'solicitudes:lista' %}" class="btn btn-link mb-3">← Volver a las necesidades</a>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <article class="ficha ficha-solicitud">
+
+        <div class="ficha-cabecera">
+          <span class="ficha-icono">{{ solicitud.tipo_ayuda|icono_tipo }}</span>
+          <div>
+            <h1 class="ficha-titulo">{{ solicitud.get_tipo_ayuda_display }}</h1>
+            <p class="ficha-ubicacion">📍 {{ solicitud.zona }}, {{ solicitud.ciudad }}</p>
+          </div>
+          <span class="insignia-urgencia grande {{ solicitud.urgencia|clase_urgencia }}">
+            {{ solicitud.urgencia|punto_urgencia }} Urgencia {{ solicitud.get_urgencia_display }}
+          </span>
+        </div>
+
+        {% if solicitud.estado == "RESUELTA" %}
+          <div class="alert alert-success">
+            ✅ <strong>Este caso ya fue resuelto.</strong> La administración marcó
+            esta solicitud como atendida. Se mantiene visible como registro.
+          </div>
+        {% endif %}
+
+        <dl class="ficha-datos">
+          <div>
+            <dt>Publicado por</dt>
+            <dd>{{ solicitud.alias }}</dd>
+          </div>
+          <div>
+            <dt>Personas afectadas</dt>
+            <dd>👥 {{ solicitud.personas_afectadas }}</dd>
+          </div>
+          <div>
+            <dt>Estado</dt>
+            <dd><span class="insignia-estado {{ solicitud.estado|clase_estado }}">{{ solicitud.get_estado_display }}</span></dd>
+          </div>
+          <div>
+            <dt>Fecha de publicación</dt>
+            <dd>{{ solicitud.creado|date:"d/m/Y H:i" }} ({{ solicitud.creado|timesince }} atrás)</dd>
+          </div>
+        </dl>
+
+        <h2 class="h5 mt-4">Descripción de la necesidad</h2>
+        <p class="ficha-descripcion">{{ solicitud.descripcion|linebreaks }}</p>
+
+        {% if solicitud.foto %}
+          <h2 class="h5 mt-4">Foto adjunta</h2>
+          <img src="{{ solicitud.foto.url }}" alt="Foto de la situación reportada" class="ficha-foto">
+          <p class="text-muted small">Foto subida por quien publicó. No ha sido verificada.</p>
+        {% endif %}
+
+      </article>
+    </div>
+
+    <div class="col-lg-4">
+      <!-- Contacto -->
+      <div class="tarjeta-contacto">
+        <h2 class="h5">📞 Cómo contactar</h2>
+
+        {% include "parciales/aviso_verificacion.html" %}
+
+        {% if solicitud.contacto_telefono %}
+          <a href="tel:{{ solicitud.contacto_telefono }}" class="btn btn-danger btn-lg w-100 mb-2">
+            📞 Llamar a {{ solicitud.contacto_telefono }}
+          </a>
+          {% with numero=solicitud.contacto_telefono|whatsapp %}
+            {% if numero %}
+              <a href="https://wa.me/{{ numero }}"
+                 target="_blank" rel="noopener noreferrer"
+                 class="btn btn-success btn-lg w-100 mb-2">
+                💬 Escribir por WhatsApp
+              </a>
+            {% endif %}
+          {% endwith %}
+        {% endif %}
+
+        {% if solicitud.contacto_email %}
+          <a href="mailto:{{ solicitud.contacto_email }}" class="btn btn-outline-primary btn-lg w-100">
+            ✉️ {{ solicitud.contacto_email }}
+          </a>
+        {% endif %}
+
+        {% if not solicitud.tiene_contacto %}
+          <p class="text-muted">Esta publicación no incluyó datos de contacto.</p>
+        {% endif %}
+      </div>
+
+      <!-- Difundir -->
+      <div class="tarjeta-compartir">
+        <h2 class="h6">📣 Ayuda a difundir</h2>
+        <p class="small text-muted">
+          Compártelo con tus contactos: entre más personas lo vean, más probable
+          es que alguien pueda ayudar.
+        </p>
+        {% include "parciales/compartir.html" with texto=solicitud.texto_para_compartir url=solicitud.get_absolute_url %}
+      </div>
+
+      <!-- Ubicacion -->
+      {% if solicitud.tiene_coordenadas %}
+        <div class="tarjeta-mapa-mini">
+          <h2 class="h5">🗺️ Ubicación</h2>
+          <div id="mapaDetalle" class="mapa-mini"
+               data-lat="{{ solicitud.latitud|stringformat:'s' }}"
+               data-lng="{{ solicitud.longitud|stringformat:'s' }}"
+               data-titulo="{{ solicitud.get_tipo_ayuda_display|escapejs }}"></div>
+          <a href="https://www.openstreetmap.org/?mlat={{ solicitud.latitud }}&mlon={{ solicitud.longitud }}#map=17/{{ solicitud.latitud }}/{{ solicitud.longitud }}"
+             target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary w-100 mt-2">
+            Abrir en OpenStreetMap
+          </a>
+        </div>
+      {% endif %}
+
+      <!-- Coincidencias -->
+      {% if coincidencias %}
+        <div class="tarjeta-coincidencias">
+          <h2 class="h5">🤝 Posibles coincidencias</h2>
+          <p class="small text-muted">
+            Encontramos {{ coincidencias|length }} ayuda{{ coincidencias|length|pluralize:"s" }}
+            que podría{{ coincidencias|length|pluralize:"n" }} coincidir con esta necesidad.
+            Es una sugerencia automática, no un compromiso.
+          </p>
+          {% for c in coincidencias %}
+            <a href="{% url 'ayudas:detalle' c.ayuda.pk %}" class="coincidencia-item">
+              <span class="coincidencia-icono">{{ c.ayuda.tipo_ayuda|icono_tipo }}</span>
+              <span class="coincidencia-texto">
+                <strong>{{ c.ayuda.get_tipo_ayuda_display }}</strong><br>
+                <small>{{ c.ayuda.zona }}, {{ c.ayuda.ciudad }} · {{ c.ayuda.cantidad }}</small>
+              </span>
+              <span class="coincidencia-score">{{ c.score }}%</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if solicitud.tiene_coordenadas %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/mapa-detalle.js' %}"></script>
+{% endif %}
+{% endblock %}

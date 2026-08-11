@@ -1,0 +1,58 @@
+{% comment %}
+Selector de foto pensado para celular.
+
+Da dos caminos claros en lugar de un unico boton que en iPhone abre la app
+Archivos y confunde a la gente:
+
+  - "Elegir de la galeria" -> input SIN capture, el sistema abre el carrete
+  - "Tomar una foto"       -> input CON capture, abre la camara directamente
+
+El campo real del formulario es el de galeria (`form.foto`), asi que si el
+navegador es viejo o el JavaScript falla, el formulario sigue funcionando: se
+ve un input de archivo normal y la publicacion se puede enviar igual.
+
+Parametro: campo = form.foto
+{% endcomment %}
+<div class="selector-foto" data-selector-foto>
+  <label class="form-label fw-bold">{{ campo.label }}</label>
+
+  {% if campo.help_text %}
+    <p class="form-text mt-0 mb-2">{{ campo.help_text }}</p>
+  {% endif %}
+
+  {# Campo real del formulario. Sin capture: el sistema ofrece la galeria. #}
+  {{ campo }}
+
+  {# Input auxiliar solo para la camara. No se envia: su archivo se copia al de arriba. #}
+  <input type="file" accept="image/*" capture="environment"
+         class="entrada-camara" tabindex="-1" aria-hidden="true">
+
+  <div class="selector-foto-botones">
+    <button type="button" class="btn btn-foto btn-galeria">
+      🖼️ Elegir de la galería
+    </button>
+    <button type="button" class="btn btn-foto btn-camara">
+      📷 Tomar una foto
+    </button>
+  </div>
+
+  <p class="selector-foto-ayuda">
+    Es opcional. Una foto ayuda a que las personas entiendan mejor la situación.
+  </p>
+
+  <div class="selector-foto-previa" hidden>
+    <img alt="Vista previa de la foto seleccionada">
+    <div class="previa-datos">
+      <span class="previa-nombre"></span>
+      <button type="button" class="btn btn-sm btn-outline-danger btn-quitar-foto">
+        ✕ Quitar foto
+      </button>
+    </div>
+  </div>
+
+  <div class="selector-foto-error" role="alert" hidden></div>
+
+  {% for error in campo.errors %}
+    <div class="invalid-feedback d-block">{{ error }}</div>
+  {% endfor %}
+</div>

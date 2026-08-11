@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+{% load ayuda_extras humanize static %}
+
+{% block titulo %}ESTAMOS CONTIGO · Plataforma comunitaria de ayuda{% endblock %}
+
+{% block contenido %}
+
+<section class="portada">
+  <picture class="portada-fondo">
+    <source media="(max-width: 600px)" srcset="{% static 'img/hero-600.jpg' %}">
+    <source media="(max-width: 1100px)" srcset="{% static 'img/hero-1000.jpg' %}">
+    <img src="{% static 'img/hero-1600.jpg' %}"
+         alt="Voluntarios retirando escombros junto a un cartel que dice: juntos somos más fuertes"
+         fetchpriority="high">
+  </picture>
+
+  <div class="container portada-contenido text-center">
+    <img src="{% static 'img/logo-simbolo.png' %}" alt="" class="portada-logo">
+    <span class="portada-marca">Juntos somos más fuertes</span>
+    <h1 class="portada-titulo">ESTAMOS CONTIGO</h1>
+    <p class="portada-lema">
+      Una plataforma comunitaria para conectar personas que necesitan ayuda
+      con personas que pueden brindarla.
+    </p>
+
+    <div class="portada-acciones">
+      <a href="{% url 'solicitudes:crear' %}" class="btn-portada btn-portada-roja">
+        🆘 NECESITO AYUDA
+      </a>
+      <a href="{% url 'ayudas:crear' %}" class="btn-portada btn-portada-verde">
+        🤝 QUIERO AYUDAR
+      </a>
+    </div>
+
+    <!-- Buscador general -->
+    <form method="get" action="{% url 'core:inicio' %}#publicaciones" class="buscador">
+      <label for="buscadorPrincipal" class="visually-hidden">
+        Buscar ayuda, necesidades, puntos o reportes
+      </label>
+      <div class="buscador-caja">
+        <span class="buscador-icono" aria-hidden="true">🔍</span>
+        <input type="search" id="buscadorPrincipal" name="q"
+               value="{{ busqueda }}"
+               placeholder="Busca: mercado, agua, alojamiento, Armenia…"
+               autocomplete="off">
+        <button type="submit" class="buscador-boton">Buscar</button>
+      </div>
+      <p class="buscador-ayuda">
+        Busca en necesidades, ayudas, puntos y reportes al mismo tiempo.
+      </p>
+    </form>
+
+    <p class="portada-nota">
+      No necesitas registrarte. Publicas y aparece de inmediato.
+    </p>
+  </div>
+</section>
+
+<div class="container">
+
+  <!-- ================= PANEL DE RESUMEN ================= -->
+  <section class="panel-resumen" aria-label="Resumen de la plataforma">
+    <div class="resumen-cabecera">
+      <h2 class="h5 mb-0">📊 Estado de la plataforma</h2>
+      <span class="resumen-nota">Actualizado en tiempo real</span>
+    </div>
+    <div class="resumen-datos">
+      <a href="{% url 'solicitudes:lista' %}" class="dato dato-rojo">
+        <span class="dato-numero">{{ resumen.solicitudes|intcomma }}</span>
+        <span class="dato-etiqueta">🆘 Necesitan ayuda</span>
+      </a>
+      <a href="{% url 'ayudas:lista' %}" class="dato dato-verde">
+        <span class="dato-numero">{{ resumen.ofertas|intcomma }}</span>
+        <span class="dato-etiqueta">🤝 Ayudas disponibles</span>
+      </a>
+      <a href="{% url 'puntos:lista' %}" class="dato dato-morado">
+        <span class="dato-numero">{{ resumen.puntos|intcomma }}</span>
+        <span class="dato-etiqueta">📍 Puntos de ayuda</span>
+      </a>
+      <a href="{% url 'reportes:lista' %}" class="dato dato-amarillo">
+        <span class="dato-numero">{{ resumen.reportes|intcomma }}</span>
+        <span class="dato-etiqueta">📢 Reportes</span>
+      </a>
+      <div class="dato dato-azul">
+        <span class="dato-numero">{{ resumen.coincidencias|intcomma }}</span>
+        <span class="dato-etiqueta">🔗 Coincidencias</span>
+      </div>
+      <div class="dato dato-logrado">
+        <span class="dato-numero">{{ resumen.entregadas|intcomma }}</span>
+        <span class="dato-etiqueta">✅ Ayudas entregadas</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PESTAÑAS PRINCIPALES ================= -->
+  <section class="seccion-pestanas" id="publicaciones">
+
+    <div class="pestanas" role="tablist">
+      <button type="button" role="tab" class="pestana pestana-roja {% if pestana == 'necesidades' %}activa{% endif %}"
+              data-panel="panel-necesidades" aria-selected="{% if pestana == 'necesidades' %}true{% else %}false{% endif %}">
+        <span class="pestana-icono">🆘</span>
+        <span class="pestana-texto">Necesitan ayuda</span>
+        <span class="pestana-contador">{{ total_solicitudes }}</span>
+      </button>
+      <button type="button" role="tab" class="pestana pestana-verde {% if pestana == 'ayudas' %}activa{% endif %}"
+              data-panel="panel-ayudas" aria-selected="{% if pestana == 'ayudas' %}true{% else %}false{% endif %}">
+        <span class="pestana-icono">🤝</span>
+        <span class="pestana-texto">Ofrecen ayuda</span>
+        <span class="pestana-contador">{{ total_ofertas }}</span>
+      </button>
+    </div>
+
+    {% if busqueda %}
+      <div class="aviso-busqueda">
+        <div>
+          <strong>Resultados para “{{ busqueda }}”:</strong>
+          {{ resultados_busqueda }} publicación{{ resultados_busqueda|pluralize:"es" }}
+          encontrada{{ resultados_busqueda|pluralize:"s" }}.
+        </div>
+        <a href="{% url 'core:inicio' %}" class="btn btn-sm btn-outline-secondary">
+          ✕ Quitar la búsqueda
+        </a>
+      </div>
+    {% endif %}
+
+    <!-- Filtros compartidos por las dos pestañas -->
+    <form method="get" action="#publicaciones" class="filtros-portada">
+      <input type="hidden" name="ver" id="campoVer" value="{{ pestana }}">
+      {% if busqueda %}<input type="hidden" name="q" value="{{ busqueda }}">{% endif %}
+      <div class="row g-2 align-items-end">
+        <div class="col-6 col-md-4">
+          <label for="f-ciudad" class="form-label">Ciudad</label>
+          <input type="text" id="f-ciudad" name="ciudad" value="{{ filtros.ciudad }}"
+                 class="form-control" list="ciudadesPortada" placeholder="Todas las ciudades">
+          <datalist id="ciudadesPortada">
+            {% for c in ciudades %}<option value="{{ c }}">{% endfor %}
+          </datalist>
+        </div>
+        <div class="col-6 col-md-4">
+          <label for="f-tipo" class="form-label">Tipo de ayuda</label>
+          <select id="f-tipo" name="tipo" class="form-select">
+            <option value="">Todos los tipos</option>
+            {% for valor, etiqueta in tipos %}
+              <option value="{{ valor }}" {% if filtros.tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-4 d-flex gap-2">
+          <button type="submit" class="btn btn-primary flex-grow-1">Buscar</button>
+          {% if hay_filtros %}
+            <a href="{% url 'core:inicio' %}" class="btn btn-outline-secondary">Limpiar</a>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+
+    <!-- PANEL: quienes necesitan ayuda -->
+    <div class="panel-pestana {% if pestana == 'necesidades' %}visible{% endif %}" id="panel-necesidades">
+      {% if solicitudes %}
+        <p class="panel-intro">
+          Estas personas necesitan ayuda. Puedes contactarlas directamente desde
+          cada tarjeta. <strong>Verifica siempre antes de entregar algo y nunca
+          envíes dinero.</strong>
+        </p>
+        <div class="row g-3">
+          {% for solicitud in solicitudes %}
+            <div class="col-md-6 col-lg-4">
+              {% include "solicitudes/parcial_tarjeta.html" with solicitud=solicitud %}
+            </div>
+          {% endfor %}
+        </div>
+        {% if hay_mas_solicitudes %}
+          <div class="text-center mt-4">
+            <a href="{% url 'solicitudes:lista' %}{% if filtros.ciudad %}?ciudad={{ filtros.ciudad }}{% endif %}"
+               class="btn btn-danger btn-lg">
+              Ver las {{ total_solicitudes }} necesidades →
+            </a>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="panel-vacio">
+          <p class="vacio-icono">🆘</p>
+          {% if hay_filtros %}
+            <h2>No hay necesidades con esos filtros</h2>
+            <p>Prueba con otra ciudad u otro tipo de ayuda.</p>
+            <a href="{% url 'core:inicio' %}" class="btn btn-outline-secondary">Quitar filtros</a>
+          {% else %}
+            <h2>Todavía nadie ha pedido ayuda</h2>
+            <p>
+              Cuando alguien publique una necesidad, aparecerá aquí de inmediato
+              para que la comunidad pueda responder.
+            </p>
+            <a href="{% url 'solicitudes:crear' %}" class="btn btn-danger btn-lg">
+              🆘 Publicar una necesidad
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- PANEL: quienes ofrecen ayuda -->
+    <div class="panel-pestana {% if pestana == 'ayudas' %}visible{% endif %}" id="panel-ayudas">
+      {% if ofertas %}
+        <p class="panel-intro">
+          Estas personas y negocios tienen ayuda disponible. Contáctalos
+          directamente. <strong>Verifica siempre y nunca envíes dinero por
+          adelantado.</strong>
+        </p>
+        <div class="row g-3">
+          {% for oferta in ofertas %}
+            <div class="col-md-6 col-lg-4">
+              {% include "ayudas/parcial_tarjeta.html" with oferta=oferta %}
+            </div>
+          {% endfor %}
+        </div>
+        {% if hay_mas_ofertas %}
+          <div class="text-center mt-4">
+            <a href="{% url 'ayudas:lista' %}{% if filtros.ciudad %}?ciudad={{ filtros.ciudad }}{% endif %}"
+               class="btn btn-success btn-lg">
+              Ver las {{ total_ofertas }} ayudas disponibles →
+            </a>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="panel-vacio">
+          <p class="vacio-icono">🤝</p>
+          {% if hay_filtros %}
+            <h2>No hay ayudas con esos filtros</h2>
+            <p>Prueba con otra ciudad u otro tipo de ayuda.</p>
+            <a href="{% url 'core:inicio' %}" class="btn btn-outline-secondary">Quitar filtros</a>
+          {% else %}
+            <h2>Todavía nadie ha ofrecido ayuda</h2>
+            <p>
+              Si puedes aportar algo —comida, agua, alojamiento, transporte—
+              publícalo y aparecerá aquí para quien lo necesite.
+            </p>
+            <a href="{% url 'ayudas:crear' %}" class="btn btn-success btn-lg">
+              🤝 Ofrecer ayuda
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+    {% if busqueda and puntos_encontrados %}
+      <div class="resultados-extra">
+        <h3 class="h6">📍 Puntos de ayuda que coinciden</h3>
+        <div class="row g-3">
+          {% for punto in puntos_encontrados %}
+            <div class="col-md-6 col-lg-4">
+              <a href="{{ punto.get_absolute_url }}" class="resultado-mini">
+                <strong>{{ punto.nombre }}</strong>
+                <span>{{ punto.get_tipo_display }} · {{ punto.zona }}, {{ punto.ciudad }}</span>
+                <span class="resultado-horario">🕐 {{ punto.horario }}</span>
+                {% if punto.verificado %}
+                  <span class="insignia-verificado">✅ Verificado</span>
+                {% endif %}
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if busqueda and reportes_encontrados %}
+      <div class="resultados-extra">
+        <h3 class="h6">📢 Reportes que coinciden</h3>
+        <div class="row g-3">
+          {% for reporte in reportes_encontrados %}
+            <div class="col-md-6 col-lg-4">
+              <a href="{{ reporte.get_absolute_url }}" class="resultado-mini">
+                <strong>{{ reporte.icono }} {{ reporte.get_tipo_reporte_display }}</strong>
+                <span>{{ reporte.zona }}, {{ reporte.ciudad }}</span>
+                <span class="resultado-horario">{{ reporte.creado|timesince }} atrás</span>
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+  </section>
+
+  <!-- ================= ACCESOS SECUNDARIOS ================= -->
+  <section class="accesos-secundarios">
+    <a href="{% url 'mapa:mapa' %}" class="acceso">
+      <span class="acceso-icono">🗺️</span>
+      <span class="acceso-texto">Ver el mapa</span>
+      <span class="acceso-sub">Todo ubicado geográficamente</span>
+    </a>
+    <a href="{% url 'puntos:lista' %}" class="acceso">
+      <span class="acceso-icono">📍</span>
+      <span class="acceso-texto">Puntos de ayuda</span>
+      <span class="acceso-sub">{{ total_puntos }} lugar{{ total_puntos|pluralize:"es" }} registrado{{ total_puntos|pluralize:"s" }}</span>
+    </a>
+    <a href="{% url 'reportes:lista' %}" class="acceso">
+      <span class="acceso-icono">📢</span>
+      <span class="acceso-texto">Reportes</span>
+      <span class="acceso-sub">{{ total_reportes }} situación{{ total_reportes|pluralize:"es" }} reportada{{ total_reportes|pluralize:"s" }}</span>
+    </a>
+    <a href="{% url 'informacion:lista' %}" class="acceso">
+      <span class="acceso-icono">ℹ️</span>
+      <span class="acceso-texto">Información oficial</span>
+      <span class="acceso-sub">Enlaces a fuentes oficiales</span>
+    </a>
+  </section>
+
+  <!-- ================= MURO DE ACTIVIDAD ================= -->
+  <section class="muro">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div>
+        <h2 class="titulo-seccion mb-1">📋 Lo que la comunidad está registrando</h2>
+        <p class="text-muted small mb-0">
+          Todo lo que se publica en la plataforma, en orden de llegada.
+        </p>
+      </div>
+      {% if ayudas_entregadas %}
+        <span class="insignia-entregadas">
+          ✅ {{ ayudas_entregadas }} ayuda{{ ayudas_entregadas|pluralize:"s" }} ya entregada{{ ayudas_entregadas|pluralize:"s" }}
+        </span>
+      {% endif %}
+    </div>
+
+    {% if actividad %}
+      <div class="lista-actividad">
+        {% for item in actividad %}
+          <a href="{{ item.url }}" class="actividad-item actividad-{{ item.tipo }}">
+            {% if item.foto %}
+              <img src="{{ item.foto.url }}" alt="" class="actividad-foto" loading="lazy">
+            {% else %}
+              <span class="actividad-icono">{{ item.icono }}</span>
+            {% endif %}
+
+            <span class="actividad-cuerpo">
+              <span class="actividad-etiqueta">{{ item.etiqueta }}</span>
+              <strong class="actividad-titulo">{{ item.titulo }}</strong>
+              <span class="actividad-detalle">{{ item.detalle }}</span>
+              <span class="actividad-lugar">📍 {{ item.zona }}, {{ item.ciudad }}</span>
+            </span>
+
+            <span class="actividad-tiempo">{{ item.creado|timesince }}<br>atrás</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="panel-vacio">
+        <p class="vacio-icono">📋</p>
+        <h2>Todavía no hay publicaciones</h2>
+        <p>
+          Esta plataforma se llena con lo que publica la gente. En cuanto alguien
+          registre una necesidad, una ayuda, un punto o un reporte, aparecerá aquí.
+        </p>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- ================= CÓMO FUNCIONA ================= -->
+  <section class="como-funciona">
+    <h2 class="titulo-seccion">¿Cómo funciona?</h2>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="paso">
+          <div class="paso-numero">1</div>
+          <h3>Publica sin registrarte</h3>
+          <p>
+            No necesitas crear una cuenta ni dar una contraseña. Llenas el
+            formulario, puedes agregar una foto desde tu galería, y tu
+            publicación aparece de inmediato.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="paso">
+          <div class="paso-numero">2</div>
+          <h3>Te encuentran</h3>
+          <p>
+            Tu publicación aparece en esta portada, en los listados y en el mapa.
+            El sistema además busca coincidencias entre lo que pides y lo que
+            otros ofrecen.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="paso">
+          <div class="paso-numero">3</div>
+          <h3>Se contactan directamente</h3>
+          <p>
+            Las personas se comunican por teléfono o WhatsApp desde la misma
+            tarjeta. <strong>Verifica que la información sea real y nunca envíes
+            dinero.</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RECORDATORIO ================= -->
+  <section class="recordatorio">
+    <h2>Ante una emergencia, llama a los organismos oficiales</h2>
+    <p>
+      Esta plataforma sirve para organizar la ayuda comunitaria después de la
+      emergencia. No es un servicio de rescate y nadie la está atendiendo las
+      24 horas. Si hay personas atrapadas, heridas o en peligro inmediato,
+      llama de inmediato:
+    </p>
+    <div class="row g-2 justify-content-center">
+      <div class="col-6 col-md-2"><a href="tel:123" class="btn-emergencia">123<small>Emergencias</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:119" class="btn-emergencia">119<small>Bomberos</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:132" class="btn-emergencia">132<small>Cruz Roja</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:144" class="btn-emergencia">144<small>Defensa Civil</small></a></div>
+      <div class="col-6 col-md-2"><a href="tel:125" class="btn-emergencia">125<small>Ambulancia</small></a></div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/pestanas.js' %}"></script>
+{% endblock %}

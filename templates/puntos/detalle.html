@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}{{ punto.nombre }} · ESTAMOS CONTIGO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+  <a href="{% url 'puntos:lista' %}" class="btn btn-link mb-3">← Volver a los puntos de ayuda</a>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <article class="ficha ficha-punto">
+
+        {% if punto.prioritario %}
+          <div class="cinta-prioritaria cinta-ficha">🚨 Atención prioritaria</div>
+        {% elif punto.destacado %}
+          <div class="cinta-destacada cinta-ficha">⭐ Punto recomendado</div>
+        {% endif %}
+
+        <div class="ficha-cabecera">
+          <span class="ficha-icono">{{ punto.icono }}</span>
+          <div>
+            <h1 class="ficha-titulo">{{ punto.nombre }}</h1>
+            <p class="ficha-ubicacion">
+              {{ punto.get_tipo_display }} · {{ punto.ciudad }}
+            </p>
+          </div>
+          <span class="insignia-verificacion grande v-{{ punto.verificacion|lower }}">
+            {{ punto.punto_verificacion }}
+            {% if punto.verificacion == "CONFIRMADO" %}CONFIRMADO
+            {% elif punto.verificacion == "CERRADO" %}CERRADO
+            {% else %}POR CONFIRMAR{% endif %}
+          </span>
+        </div>
+
+        {% if punto.verificacion == "CONFIRMADO" %}
+          <div class="alert alert-success">
+            🟢 <strong>Información confirmada.</strong>
+            Proviene de: {{ punto.fuente_informacion }}.
+            {% if punto.fecha_verificacion %}
+              Verificada el {{ punto.fecha_verificacion|date:"j \d\e F \d\e Y" }}{% if punto.hora_verificacion %} a las {{ punto.hora_verificacion|time:"H:i" }}{% endif %}.
+            {% endif %}
+            Aun así, los horarios cambian rápido durante una emergencia:
+            <strong>llama antes de ir</strong> si hay teléfono disponible.
+          </div>
+        {% elif punto.verificacion == "CERRADO" %}
+          <div class="alert alert-danger">
+            🔴 <strong>Este punto está cerrado o inactivo.</strong>
+            Se confirmó que dejó de funcionar. No te desplaces hasta aquí.
+          </div>
+        {% else %}
+          <div class="aviso-verificacion">
+            <strong>🟡 Información pendiente de confirmación oficial.</strong>
+            Este punto fue reportado pero <u>todavía no ha sido confirmado</u>
+            por una fuente oficial. Llama antes de desplazarte y verifica que
+            siga operando.
+          </div>
+        {% endif %}
+
+        {% if punto.disponibilidad != "ACTIVO" %}
+          <div class="alert alert-warning">
+            ⚠️ Este punto figura como <strong>{{ punto.get_disponibilidad_display }}</strong>.
+            Puede que ya no esté atendiendo.
+          </div>
+        {% endif %}
+
+        <dl class="ficha-datos">
+          <div>
+            <dt>Tipo de punto</dt>
+            <dd>{{ punto.get_tipo_display }}</dd>
+          </div>
+          <div>
+            <dt>Horario de atención</dt>
+            <dd>🕐 {{ punto.horario }}</dd>
+          </div>
+          <div>
+            <dt>Estado del punto</dt>
+            <dd>
+              <span class="insignia-disponibilidad-punto disp-{{ punto.disponibilidad|lower }}">
+                {{ punto.get_disponibilidad_display }}
+              </span>
+            </dd>
+          </div>
+          {% if punto.direccion %}
+            <div>
+              <dt>Dirección</dt>
+              <dd>{{ punto.direccion }}</dd>
+            </div>
+          {% endif %}
+          <div>
+            <dt>Fuente de la información</dt>
+            <dd>{{ punto.fuente_informacion }}</dd>
+          </div>
+          <div>
+            <dt>Registrado el</dt>
+            <dd>{{ punto.creado|date:"d/m/Y H:i" }} ({{ punto.creado|timesince }} atrás)</dd>
+          </div>
+        </dl>
+
+        <h2 class="h5 mt-4">Qué se hace en este punto</h2>
+        <p class="ficha-descripcion">{{ punto.descripcion|linebreaks }}</p>
+
+        {% if punto.lista_servicios %}
+          <h2 class="h5 mt-4">Qué puedes hacer aquí</h2>
+          <ul class="lista-servicios">
+            {% for servicio in punto.lista_servicios %}
+              <li>✓ {{ servicio }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {% if punto.lista_recibidos or punto.lista_no_recibidos %}
+          <div class="row g-3 mt-3">
+            {% if punto.lista_recibidos %}
+              <div class="col-md-6">
+                <div class="bloque-elementos bloque-recibe bloque-grande">
+                  <span class="elementos-titulo">✓ Sí reciben</span>
+                  <ul>
+                    {% for elemento in punto.lista_recibidos %}
+                      <li>{{ elemento }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+            {% endif %}
+            {% if punto.lista_no_recibidos %}
+              <div class="col-md-6">
+                <div class="bloque-elementos bloque-no-recibe bloque-grande">
+                  <span class="elementos-titulo">✕ NO reciben</span>
+                  <ul>
+                    {% for elemento in punto.lista_no_recibidos %}
+                      <li>{{ elemento }}</li>
+                    {% endfor %}
+                  </ul>
+                  <p class="small mb-0 mt-2">
+                    No lleves estos elementos: no podrán recibirlos.
+                  </p>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        {% if punto.foto %}
+          <h2 class="h5 mt-4">Foto del lugar</h2>
+          <img src="{{ punto.foto.url }}" alt="Foto del punto de ayuda" class="ficha-foto">
+          <p class="text-muted small">
+            Foto subida por quien registró el punto. No ha sido verificada.
+          </p>
+        {% endif %}
+
+      </article>
+    </div>
+
+    <div class="col-lg-4">
+      <!-- Cómo llegar: lo primero que necesita quien va en camino -->
+      <div class="tarjeta-contacto">
+        <h2 class="h5">📍 Cómo llegar</h2>
+        {% if punto.direccion %}
+          <p class="direccion-destacada">{{ punto.direccion }}</p>
+        {% endif %}
+        <p class="text-muted small">{{ punto.ciudad }}{% if punto.zona and punto.zona != punto.ciudad %} · {{ punto.zona }}{% endif %}</p>
+        <a href="{{ punto.url_como_llegar }}" target="_blank" rel="noopener noreferrer"
+           class="btn btn-primary btn-lg w-100">
+          🗺️ Abrir en Google Maps
+        </a>
+        {% if punto.tiene_coordenadas %}
+          <a href="https://www.openstreetmap.org/?mlat={{ punto.latitud }}&mlon={{ punto.longitud }}#map=17/{{ punto.latitud }}/{{ punto.longitud }}"
+             target="_blank" rel="noopener noreferrer"
+             class="btn btn-outline-secondary btn-sm w-100 mt-2">
+            Ver en OpenStreetMap
+          </a>
+        {% endif %}
+      </div>
+
+      {% if punto.contacto %}
+        <div class="tarjeta-contacto">
+          <h2 class="h5">📞 Contacto</h2>
+          <p class="contacto-texto">{{ punto.contacto }}</p>
+          {% if punto.telefono_limpio %}
+            <a href="tel:{{ punto.telefono_limpio }}" class="btn btn-success btn-lg w-100 mb-2">
+              📞 Llamar ahora
+            </a>
+          {% endif %}
+          <p class="small text-muted mb-0">
+            Confirma por teléfono antes de desplazarte.
+            <strong>Nunca envíes dinero por adelantado.</strong>
+          </p>
+        </div>
+      {% endif %}
+
+      {% if punto.horario %}
+        <div class="tarjeta-contacto">
+          <h2 class="h5">🕐 Horario</h2>
+          <p class="mb-0">{{ punto.horario }}</p>
+        </div>
+      {% endif %}
+
+      <!-- Fuente de la información -->
+      <div class="tarjeta-fuente-lateral">
+        <h2 class="h6">🔗 Fuente de la información</h2>
+        <p class="mb-2">{{ punto.fuente_informacion }}</p>
+        {% if punto.fecha_verificacion %}
+          <p class="small text-muted mb-2">
+            Verificada el {{ punto.fecha_verificacion|date:"j \d\e F \d\e Y" }}{% if punto.hora_verificacion %} a las {{ punto.hora_verificacion|time:"H:i" }}{% endif %}.
+          </p>
+        {% endif %}
+        {% if punto.url_fuente %}
+          <a href="{{ punto.url_fuente }}" target="_blank" rel="noopener noreferrer"
+             class="btn btn-outline-primary btn-sm w-100">
+            Ver publicación original ↗
+          </a>
+        {% endif %}
+      </div>
+
+      {% if cercanos %}
+        <div class="tarjeta-cercanos">
+          <h2 class="h6">Otros puntos en {{ punto.ciudad }}</h2>
+          {% for otro in cercanos %}
+            <a href="{{ otro.get_absolute_url }}" class="cercano-item">
+              <span class="cercano-icono">{{ otro.icono }}</span>
+              <span class="cercano-texto">
+                <strong>{{ otro.nombre }}</strong><br>
+                <small>{{ otro.get_tipo_display }}</small>
+              </span>
+              <span class="cercano-estado">{{ otro.punto_verificacion }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="tarjeta-compartir">
+        <h2 class="h6">📣 Ayuda a difundir</h2>
+        <p class="small text-muted">
+          Compártelo para que más personas sepan de este punto.
+        </p>
+        {% include "parciales/compartir.html" with texto=punto.texto_para_compartir url=punto.get_absolute_url %}
+      </div>
+
+      {% if punto.tiene_coordenadas %}
+        <div class="tarjeta-mapa-mini">
+          <h2 class="h5">🗺️ Ubicación</h2>
+          <div id="mapaDetalle" class="mapa-mini"
+               data-lat="{{ punto.latitud|stringformat:'s' }}"
+               data-lng="{{ punto.longitud|stringformat:'s' }}"
+               data-titulo="{{ punto.nombre|escapejs }}"></div>
+          <a href="https://www.openstreetmap.org/?mlat={{ punto.latitud }}&mlon={{ punto.longitud }}#map=17/{{ punto.latitud }}/{{ punto.longitud }}"
+             target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary w-100 mt-2">
+            Cómo llegar (OpenStreetMap)
+          </a>
+        </div>
+      {% endif %}
+
+      <div class="tarjeta-aviso-lateral">
+        <h2 class="h6">¿Este dato está mal?</h2>
+        <p class="small mb-0">
+          Si este punto ya cerró o la información es incorrecta, avísale a la
+          administración del sitio para que lo actualice o lo retire.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if punto.tiene_coordenadas %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/mapa-detalle.js' %}"></script>
+{% endif %}
+{% endblock %}

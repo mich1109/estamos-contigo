@@ -1,0 +1,20 @@
+{% comment %}
+Selector de ubicacion reutilizable para los formularios publicos.
+Requiere que el formulario tenga los campos latitud y longitud.
+{% endcomment %}
+<div class="campo-mapa">
+  <label class="form-label fw-bold">📍 Ubicación aproximada</label>
+  <p class="text-muted small mb-2">
+    Toca el mapa para marcar el punto, o usa el botón para tomar tu ubicación
+    actual. Marca una referencia cercana, no es necesario que sea tu dirección exacta.
+  </p>
+  <button type="button" id="btnMiUbicacion" class="btn btn-outline-primary btn-sm mb-2">
+    🎯 Usar mi ubicación actual
+  </button>
+  <div id="mapaSelector" class="mapa-selector"></div>
+  <div id="estadoUbicacion" class="text-muted small mt-2">
+    Todavía no has marcado ningún punto.
+  </div>
+  {{ form.latitud }}
+  {{ form.longitud }}
+</div>

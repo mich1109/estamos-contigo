@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load ayuda_extras %}
+
+{% block titulo %}Bandeja de moderación · ESTAMOS CONTIGO{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid py-4 panel-admin">
+
+  <div class="cabecera-panel">
+    <div>
+      <h1>🗂️ Bandeja de moderación</h1>
+      <p class="mb-0">Cierra casos resueltos y retira contenido falso.</p>
+    </div>
+    <a href="{% url 'panel:dashboard' %}" class="btn btn-light">← Volver al panel</a>
+  </div>
+
+  <!-- Filtros -->
+  <form method="get" class="panel-filtros">
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-4">
+        <label for="f-tipo" class="form-label">Tipo de contenido</label>
+        <select id="f-tipo" name="tipo" class="form-select">
+          {% for valor, etiqueta in tipos %}
+            <option value="{{ valor }}" {% if tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="f-estado" class="form-label">Estado</label>
+        <select id="f-estado" name="estado" class="form-select">
+          {% for valor, etiqueta in estados %}
+            <option value="{{ valor }}" {% if estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="f-q" class="form-label">Ciudad</label>
+        <input type="text" id="f-q" name="q" value="{{ busqueda }}" class="form-control" placeholder="Todas">
+      </div>
+      <div class="col-12 col-md-2 d-grid">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="tarjeta-panel">
+    <p class="text-muted small">
+      Mostrando hasta 100 registros. Para edición detallada, borrado o gestión
+      de usuarios, usa el <a href="/admin/">Django Admin</a>.
+    </p>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Registro</th>
+            <th>Ubicación</th>
+            <th>Publicado</th>
+            <th>Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for registro in registros %}
+          <tr>
+            <td>
+              <a href="{{ registro.get_absolute_url }}">
+                {% if tipo == "solicitud" or tipo == "ayuda" %}
+                  {{ registro.tipo_ayuda|icono_tipo }} {{ registro.get_tipo_ayuda_display }}
+                {% elif tipo == "reporte" %}
+                  {{ registro.icono }} {{ registro.get_tipo_reporte_display }}
+                {% else %}
+                  📍 {{ registro.nombre }}
+                {% endif %}
+              </a>
+              {% if tipo == "solicitud" %}
+                <br><small class="text-muted">{{ registro.alias }} · {{ registro.personas_afectadas }} persona(s)</small>
+              {% elif tipo == "ayuda" %}
+                <br><small class="text-muted">{{ registro.alias }} · {{ registro.cantidad }}</small>
+              {% endif %}
+            </td>
+            <td><small>{{ registro.zona }}, {{ registro.ciudad }}</small></td>
+            <td><small>{{ registro.creado|date:"d/m/Y H:i" }}</small></td>
+            <td>
+              <span class="insignia-estado {{ registro.estado|clase_estado }}">
+                {{ registro.get_estado_display }}
+              </span>
+            </td>
+            <td class="text-end text-nowrap">
+              {% if registro.estado != "RESUELTA" %}
+                <form method="post" action="{% url 'panel:cambiar_estado' tipo registro.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="estado" value="RESUELTA">
+                  <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+                  <button type="submit" class="btn btn-sm btn-success">✅ Cerrar</button>
+                </form>
+              {% endif %}
+              {% if registro.estado != "BLOQUEADA" %}
+                <form method="post" action="{% url 'panel:cambiar_estado' tipo registro.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="estado" value="BLOQUEADA">
+                  <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">🚫 Bloquear</button>
+                </form>
+              {% endif %}
+              {% if registro.estado != "ACTIVA" %}
+                <form method="post" action="{% url 'panel:cambiar_estado' tipo registro.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="estado" value="ACTIVA">
+                  <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+                  <button type="submit" class="btn btn-sm btn-outline-secondary">↩️ Reactivar</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-muted text-center py-4">No hay registros con estos filtros.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

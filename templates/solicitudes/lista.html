@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load ayuda_extras %}
+
+{% block titulo %}Necesidades · ESTAMOS CONTIGO{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+
+  <div class="cabecera-seccion cabecera-solicitudes">
+    <div>
+      <h1>🆘 Personas que necesitan ayuda</h1>
+      <p class="mb-0">
+        {{ total }} necesidad{{ total|pluralize:"es" }} publicada{{ total|pluralize:"s" }}
+        por la comunidad.
+      </p>
+    </div>
+    <a href="{% url 'solicitudes:crear' %}" class="btn btn-light btn-lg">+ Publicar una necesidad</a>
+  </div>
+
+  {% include "parciales/aviso_verificacion.html" %}
+
+  <!-- Filtros -->
+  <form method="get" class="panel-filtros">
+    <div class="row g-2 align-items-end">
+      <div class="col-6 col-md-3">
+        <label for="f-ciudad" class="form-label">Ciudad</label>
+        <input type="text" id="f-ciudad" name="ciudad" value="{{ filtros.ciudad }}"
+               class="form-control" placeholder="Todas">
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="f-tipo" class="form-label">Tipo de ayuda</label>
+        <select id="f-tipo" name="tipo" class="form-select">
+          <option value="">Todos</option>
+          {% for valor, etiqueta in tipos %}
+            <option value="{{ valor }}" {% if filtros.tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="f-urgencia" class="form-label">Urgencia</label>
+        <select id="f-urgencia" name="urgencia" class="form-select">
+          <option value="">Todas</option>
+          {% for valor, etiqueta in urgencias %}
+            <option value="{{ valor }}" {% if filtros.urgencia == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="f-estado" class="form-label">Estado</label>
+        <select id="f-estado" name="estado" class="form-select">
+          {% for valor, etiqueta in estados %}
+            <option value="{{ valor }}" {% if filtros.estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-2 d-grid gap-2">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <a href="{% url 'solicitudes:lista' %}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+      </div>
+    </div>
+  </form>
+
+  <!-- Resultados -->
+  {% if pagina.object_list %}
+    <div class="row g-3">
+      {% for solicitud in pagina %}
+        <div class="col-md-6 col-lg-4">
+          {% include "solicitudes/parcial_tarjeta.html" with solicitud=solicitud %}
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if pagina.has_other_pages %}
+      <nav class="mt-4" aria-label="Paginación">
+        <ul class="pagination justify-content-center">
+          {% if pagina.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% query_actual request page=pagina.previous_page_number %}">Anterior</a>
+            </li>
+          {% endif %}
+          <li class="page-item disabled">
+            <span class="page-link">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+          </li>
+          {% if pagina.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?{% query_actual request page=pagina.next_page_number %}">Siguiente</a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+
+  {% else %}
+    <div class="vacio">
+      <p class="vacio-icono">🔍</p>
+      <h2>No hay necesidades que coincidan con tu búsqueda</h2>
+      <p>Prueba quitando algún filtro, o publica tu propia necesidad.</p>
+      <a href="{% url 'solicitudes:crear' %}" class="btn btn-danger btn-lg">Publicar una necesidad</a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block titulo %}Aviso legal · ESTAMOS CONTIGO{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+
+      <h1 class="mb-4">Aviso legal y condiciones de uso</h1>
+
+      <div class="alert alert-danger">
+        <h2 class="h5">Esta plataforma no es un servicio de emergencia</h2>
+        <p class="mb-0">
+          ESTAMOS CONTIGO es una herramienta comunitaria de organización. No
+          reemplaza ni está afiliada a Bomberos, Policía Nacional, Defensa Civil,
+          Cruz Roja, alcaldías, gobernaciones ni ningún organismo oficial. Nadie
+          está monitoreando esta plataforma de forma permanente. Ante peligro
+          inmediato, llama al <a href="tel:123">123</a>.
+        </p>
+      </div>
+
+      <h2 class="h4 mt-4">Sobre la información publicada</h2>
+      <p>
+        Todo el contenido de este sitio, salvo la sección de información oficial,
+        es publicado directamente por personas de la comunidad y
+        <strong>no ha sido verificado</strong>. La plataforma no comprueba la
+        identidad de quien publica, ni la veracidad de las necesidades, ofertas,
+        puntos de ayuda o reportes.
+      </p>
+      <p>
+        Esto significa que puede existir información equivocada, desactualizada
+        o falsa. Antes de entregar o recibir cualquier ayuda, verifica por tu
+        cuenta que la información sea real.
+      </p>
+
+      <div class="alert alert-danger">
+        <h2 class="h5">🚫 Nunca envíes dinero</h2>
+        <p class="mb-0">
+          Después de un desastre aparecen personas que se hacen pasar por
+          damnificadas o por voluntarias para estafar. <strong>Nadie de esta
+          plataforma te va a pedir transferencias, recargas, datos de tu tarjeta
+          ni claves bancarias.</strong> Si alguien que contactaste aquí te pide
+          dinero por adelantado, para "gestionar" una ayuda o para "asegurar" un
+          cupo, no continúes: es una estafa.
+        </p>
+      </div>
+
+      <h2 class="h4 mt-4">Recomendaciones de seguridad</h2>
+      <ul class="lista-seguridad">
+        <li><strong>Nunca envíes dinero por adelantado, a nadie, por ningún motivo.</strong></li>
+        <li>No des datos de tu tarjeta, claves ni códigos que te lleguen por mensaje.</li>
+        <li>Confirma por teléfono antes de desplazarte a cualquier lugar.</li>
+        <li>Prefiere lugares públicos y con presencia de más personas.</li>
+        <li>Si puedes, no vayas solo. Avisa a alguien a dónde vas.</li>
+        <li>No entregues documentos originales a nadie.</li>
+        <li>No publiques tu dirección exacta, tu cédula ni datos bancarios.</li>
+        <li>Si algo te parece sospechoso, no continúes y repórtalo.</li>
+      </ul>
+
+      <h2 class="h4 mt-4">Datos que publicas</h2>
+      <p>
+        Los datos de contacto que escribas en los formularios
+        <strong>serán visibles públicamente</strong> para que otras personas
+        puedan comunicarse contigo. Publica únicamente la información que estés
+        dispuesto a que cualquiera vea. Puedes usar un alias en lugar de tu
+        nombre real, y marcar en el mapa una referencia cercana en lugar de tu
+        dirección exacta.
+      </p>
+
+      <h2 class="h4 mt-4">Sin registro de usuarios</h2>
+      <p>
+        Esta plataforma no crea cuentas de usuario. No pedimos contraseñas ni
+        guardamos perfiles. Como consecuencia, una vez publicas no puedes editar
+        ni retirar tu publicación por tu cuenta: si necesitas que se cierre o se
+        elimine, comunícate con quien administra el sitio.
+      </p>
+
+      <h2 class="h4 mt-4">Moderación</h2>
+      <p>
+        Las publicaciones aparecen de inmediato, sin revisión previa, porque en
+        una emergencia la velocidad importa. La administración de la plataforma
+        puede retirar contenido falso, engañoso o inapropiado en cualquier
+        momento, y cerrar los casos cuya ayuda ya fue entregada.
+      </p>
+
+      <h2 class="h4 mt-4">Limitación de responsabilidad</h2>
+      <p>
+        Esta plataforma solo pone en contacto a personas. No participa en la
+        entrega de ayuda, no la transporta, no la financia y no responde por
+        acuerdos entre particulares ni por el resultado de esos contactos.
+      </p>
+
+      <div class="alert alert-warning mt-4">
+        <strong>Consulta siempre fuentes oficiales</strong> para información de
+        emergencia, evacuaciones, albergues y alertas sísmicas.
+        <a href="{% url 'informacion:lista' %}">Ver enlaces oficiales</a>.
+      </div>
+
+      <a href="{% url 'core:inicio' %}" class="btn btn-primary btn-lg mt-3">Volver al inicio</a>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

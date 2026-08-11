@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load ayuda_extras static %}
+
+{% block titulo %}{{ reporte.get_tipo_reporte_display }} en {{ reporte.ciudad }} · ESTAMOS CONTIGO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block contenido %}
+<div class="container py-4">
+  <a href="{% url 'reportes:lista' %}" class="btn btn-link mb-3">← Volver a los reportes</a>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <article class="ficha ficha-reporte">
+
+        <div class="ficha-cabecera">
+          <span class="ficha-icono">{{ reporte.icono }}</span>
+          <div>
+            <h1 class="ficha-titulo">{{ reporte.get_tipo_reporte_display }}</h1>
+            <p class="ficha-ubicacion">📍 {{ reporte.zona }}, {{ reporte.ciudad }}</p>
+          </div>
+          <span class="insignia-urgencia grande {{ reporte.urgencia|clase_urgencia }}">
+            {{ reporte.urgencia|punto_urgencia }} Urgencia {{ reporte.get_urgencia_display }}
+          </span>
+        </div>
+
+        <div class="aviso-verificacion">
+          <p class="mb-2">
+            <strong>🔎 Reporte realizado por un usuario de la comunidad.</strong>
+            Esta información <u>no ha sido verificada</u> por ninguna autoridad ni
+            por la administración de la plataforma. Es la observación de una
+            persona, no un parte oficial. Si describe una emergencia, repórtala
+            también al <a href="tel:123">123</a>.
+          </p>
+          <p class="aviso-dinero mb-0">
+            <strong>🚫 Nunca envíes dinero.</strong>
+            Si alguien te contacta a raíz de este reporte pidiendo
+            transferencias, recargas o datos bancarios, es una estafa.
+          </p>
+        </div>
+
+        {% if reporte.estado == "RESUELTA" %}
+          <div class="alert alert-secondary">
+            ⚫ <strong>Este reporte fue cerrado.</strong> La administración lo
+            marcó como atendido o ya no vigente.
+          </div>
+        {% endif %}
+
+        <dl class="ficha-datos">
+          <div>
+            <dt>Estado</dt>
+            <dd><span class="insignia-estado-reporte">{{ reporte.punto_estado }} {{ reporte.estado_publico }}</span></dd>
+          </div>
+          <div>
+            <dt>Nivel de urgencia</dt>
+            <dd>{{ reporte.urgencia|punto_urgencia }} {{ reporte.get_urgencia_display }}</dd>
+          </div>
+          <div>
+            <dt>Reportado por</dt>
+            <dd>{{ reporte.reportado_por|default:"Reporte anónimo" }}</dd>
+          </div>
+          <div>
+            <dt>Fecha del reporte</dt>
+            <dd>{{ reporte.creado|date:"d/m/Y H:i" }} ({{ reporte.creado|timesince }} atrás)</dd>
+          </div>
+        </dl>
+
+        <h2 class="h5 mt-4">Descripción de la situación</h2>
+        <p class="ficha-descripcion">{{ reporte.descripcion|linebreaks }}</p>
+
+        {% if reporte.foto %}
+          <h2 class="h5 mt-4">Foto adjunta</h2>
+          <img src="{{ reporte.foto.url }}" alt="Foto de la situación reportada" class="ficha-foto">
+          <p class="text-muted small">
+            Foto subida por quien reportó. No ha sido verificada.
+          </p>
+        {% endif %}
+
+      </article>
+    </div>
+
+    <div class="col-lg-4">
+      {% if reporte.tiene_coordenadas %}
+        <div class="tarjeta-mapa-mini">
+          <h2 class="h5">🗺️ Ubicación del reporte</h2>
+          <div id="mapaDetalle" class="mapa-mini"
+               data-lat="{{ reporte.latitud|stringformat:'s' }}"
+               data-lng="{{ reporte.longitud|stringformat:'s' }}"
+               data-titulo="{{ reporte.get_tipo_reporte_display|escapejs }}"></div>
+          <a href="https://www.openstreetmap.org/?mlat={{ reporte.latitud }}&mlon={{ reporte.longitud }}#map=17/{{ reporte.latitud }}/{{ reporte.longitud }}"
+             target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary w-100 mt-2">
+            Abrir en OpenStreetMap
+          </a>
+        </div>
+      {% endif %}
+
+      <div class="tarjeta-emergencia">
+        <h2 class="h6">¿Es una emergencia?</h2>
+        <p class="small">
+          Esta plataforma no atiende emergencias. Si hay personas en peligro,
+          llama de inmediato:
+        </p>
+        <a href="tel:123" class="btn btn-danger btn-lg w-100">📞 Llamar al 123</a>
+      </div>
+
+      <div class="tarjeta-compartir">
+        <h2 class="h6">📣 Ayuda a difundir</h2>
+        <p class="small text-muted">
+          Compártelo para que la comunidad y quienes puedan atenderlo se enteren.
+        </p>
+        {% include "parciales/compartir.html" with texto=reporte.texto_para_compartir url=reporte.get_absolute_url %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if reporte.tiene_coordenadas %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/mapa-detalle.js' %}"></script>
+{% endif %}
+{% endblock %}

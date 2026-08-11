@@ -1,0 +1,48 @@
+# Configuracion de despliegue para Render.
+#
+# Con este archivo, Render crea el sitio y la base de datos automaticamente:
+# no hay que configurar nada a mano en su panel.
+#
+# Para usarlo: en Render, "New +" -> "Blueprint" -> elige este repositorio.
+
+services:
+  - type: web
+    name: estamos-contigo
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application"
+    healthCheckPath: /
+
+    envVars:
+      # Clave de seguridad. Render genera una aleatoria y la mantiene secreta.
+      - key: SECRET_KEY
+        generateValue: true
+
+      # Produccion: activa HTTPS obligatorio, cookies seguras y HSTS.
+      - key: DEBUG
+        value: "False"
+
+      # El modo local solo sirve para ver el sitio en tu computador.
+      - key: MODO_LOCAL
+        value: "False"
+
+      # El dominio real lo agrega Django solo, leyendo RENDER_EXTERNAL_HOSTNAME.
+      - key: ALLOWED_HOSTS
+        value: "localhost,127.0.0.1"
+
+      # Conexion a la base de datos de abajo.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: estamos-contigo-db
+          property: connectionString
+
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+
+databases:
+  - name: estamos-contigo-db
+    databaseName: estamos_contigo
+    plan: free
+    region: oregon

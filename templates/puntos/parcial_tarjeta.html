@@ -1,0 +1,105 @@
+{% comment %}
+Tarjeta de un punto del directorio de ayuda.
+Se usa en el listado y en los resultados de busqueda.
+{% endcomment %}
+<article class="tarjeta tarjeta-punto verif-{{ punto.verificacion|lower }}
+                {% if not punto.esta_operando %}tarjeta-inactiva{% endif %}">
+
+  {% if punto.prioritario %}
+    <div class="cinta-prioritaria">🚨 Atención prioritaria</div>
+  {% elif punto.destacado %}
+    <div class="cinta-destacada">⭐ Punto recomendado</div>
+  {% endif %}
+
+  <div class="tarjeta-cabecera">
+    <span class="tarjeta-icono">{{ punto.icono }}</span>
+    <span class="insignia-verificacion v-{{ punto.verificacion|lower }}">
+      {{ punto.punto_verificacion }}
+      {% if punto.verificacion == "CONFIRMADO" %}CONFIRMADO
+      {% elif punto.verificacion == "CERRADO" %}CERRADO
+      {% else %}POR CONFIRMAR{% endif %}
+    </span>
+  </div>
+
+  <h3 class="tarjeta-titulo">{{ punto.nombre }}</h3>
+
+  {% if punto.foto %}
+    <a href="{{ punto.get_absolute_url }}" class="tarjeta-foto-enlace">
+      <img src="{{ punto.foto.url }}" alt="" class="tarjeta-foto" loading="lazy">
+    </a>
+  {% endif %}
+
+  <p class="tarjeta-tipo">{{ punto.get_tipo_display }}</p>
+
+  <p class="tarjeta-ubicacion">
+    📍 {{ punto.ciudad }}{% if punto.direccion %}<br>
+      <span class="tarjeta-direccion">{{ punto.direccion }}</span>
+    {% elif punto.zona and punto.zona != punto.ciudad %}<br>
+      <span class="tarjeta-direccion">{{ punto.zona }}</span>
+    {% endif %}
+  </p>
+
+  {% if punto.horario %}
+    <p class="tarjeta-horario">🕐 {{ punto.horario }}</p>
+  {% endif %}
+
+  <p class="tarjeta-descripcion">{{ punto.descripcion|truncatechars:130 }}</p>
+
+  {% if punto.lista_recibidos %}
+    <div class="bloque-elementos bloque-recibe">
+      <span class="elementos-titulo">Recibe</span>
+      <ul>
+        {% for elemento in punto.lista_recibidos|slice:":5" %}
+          <li>✓ {{ elemento }}</li>
+        {% endfor %}
+        {% if punto.lista_recibidos|length > 5 %}
+          <li class="elementos-mas">y {{ punto.lista_recibidos|length|add:"-5" }} más…</li>
+        {% endif %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if punto.lista_no_recibidos %}
+    <div class="bloque-elementos bloque-no-recibe">
+      <span class="elementos-titulo">NO recibe</span>
+      <ul>
+        {% for elemento in punto.lista_no_recibidos %}
+          <li>✕ {{ elemento }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if punto.disponibilidad != "ACTIVO" %}
+    <p class="aviso-cerrado">⚠️ {{ punto.get_disponibilidad_display }}</p>
+  {% endif %}
+
+  <div class="tarjeta-acciones">
+    <a href="{{ punto.url_como_llegar }}" target="_blank" rel="noopener noreferrer"
+       class="btn btn-sm btn-como-llegar">📍 Cómo llegar</a>
+
+    {% if punto.telefono_limpio %}
+      <a href="tel:{{ punto.telefono_limpio }}" class="btn btn-sm btn-contacto btn-llamar">
+        📞 Llamar
+      </a>
+    {% endif %}
+
+    <a href="{{ punto.get_absolute_url }}" class="btn btn-sm btn-purple">ℹ️ Ver detalles</a>
+
+    {% if punto.url_fuente %}
+      <a href="{{ punto.url_fuente }}" target="_blank" rel="noopener noreferrer"
+         class="btn btn-sm btn-outline-secondary">🔗 Ver fuente</a>
+    {% endif %}
+  </div>
+
+  <p class="tarjeta-fuente">
+    <strong>Fuente:</strong> {{ punto.fuente_informacion }}
+    {% if punto.fecha_verificacion %}
+      <br>Actualizado el {{ punto.fecha_verificacion|date:"j \d\e F \d\e Y" }}{% if punto.hora_verificacion %} a las {{ punto.hora_verificacion|time:"H:i" }}{% endif %}
+    {% endif %}
+  </p>
+
+  {% if punto.verificacion != "CONFIRMADO" %}
+    <p class="tarjeta-nota">Información pendiente de confirmación oficial</p>
+  {% endif %}
+</article>

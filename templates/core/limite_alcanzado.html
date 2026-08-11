@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block titulo %}Demasiadas publicaciones · ESTAMOS CONTIGO{% endblock %}
+
+{% block contenido %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="panel-vacio">
+        <p class="vacio-icono">⏳</p>
+        <h1 class="h3">Has publicado muchas veces en poco tiempo</h1>
+        <p>
+          Por seguridad, cada conexión puede publicar hasta {{ limite }} veces
+          por hora. Esto evita que alguien inunde el sitio con información falsa
+          y deje sin visibilidad a quien de verdad necesita ayuda.
+        </p>
+        <p>
+          <strong>Tus publicaciones anteriores siguen activas.</strong>
+          Espera un momento e intenta de nuevo.
+        </p>
+
+        <div class="alert alert-danger text-start mt-4">
+          <strong>⚠️ Si esto es una emergencia, no esperes.</strong>
+          Llama de inmediato a la línea única <a href="tel:123">123</a>.
+        </div>
+
+        <a href="{% url 'core:inicio' %}" class="btn btn-primary btn-lg mt-2">
+          Volver al inicio
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

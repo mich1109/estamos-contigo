@@ -14,4 +14,9 @@ python manage.py collectstatic --no-input
 echo "==> Aplicando cambios de la base de datos"
 python manage.py migrate
 
+echo "==> Preparando el sitio (administrador y directorio de puntos)"
+# Solo actua la primera vez: no duplica puntos ni cambia contrasenas ya
+# establecidas. Necesario porque el plan gratuito de Render no da terminal.
+python manage.py preparar_sitio
+
 echo "==> Listo"

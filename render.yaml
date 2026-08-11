@@ -41,6 +41,22 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.7"
 
+      # --- Administrador inicial ---
+      # El plan gratuito no da acceso a terminal, asi que el primer
+      # administrador se crea durante el despliegue con estos valores.
+      #
+      # sync: false hace que Render los pida en su panel y los guarde de forma
+      # segura: nunca quedan escritos en el codigo ni en GitHub.
+      #
+      # Una vez creado el usuario, entra al sitio, cambia la contrasena y
+      # BORRA ADMIN_CLAVE desde Render > Environment.
+      - key: ADMIN_USUARIO
+        sync: false
+      - key: ADMIN_CLAVE
+        sync: false
+      - key: ADMIN_CORREO
+        sync: false
+
 databases:
   - name: estamos-contigo-db
     databaseName: estamos_contigo

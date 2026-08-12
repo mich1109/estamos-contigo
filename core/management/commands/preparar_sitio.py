@@ -25,6 +25,19 @@ class Command(BaseCommand):
     help = "Crea el administrador inicial y carga el directorio de puntos."
 
     def handle(self, *args, **opciones):
+        from django.conf import settings
+
+        # --- Carpeta de fotos ---
+        # En Render el disco persistente se monta vacio: si la carpeta no
+        # existe, la primera foto que alguien suba fallaria.
+        try:
+            os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+            self.stdout.write(f"Carpeta de fotos lista: {settings.MEDIA_ROOT}")
+        except OSError as error:
+            self.stdout.write(
+                self.style.WARNING(f"No se pudo crear la carpeta de fotos: {error}")
+            )
+
         Usuario = get_user_model()
 
         nombre = os.getenv("ADMIN_USUARIO", "").strip()

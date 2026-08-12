@@ -134,18 +134,17 @@ class SubidaDeImagenesTests(TestCase):
         self.assertIsNotNone(reporte)
         self.assertFalse(reporte.foto)
 
-    def test_se_rechaza_una_imagen_demasiado_pesada(self):
+    def test_una_foto_pesada_se_reduce_en_vez_de_rechazarse(self):
         """
-        El limite es 5 MB.
+        Una foto de celular puede pesar mas de 5 MB facilmente.
 
-        La imagen tiene que ser valida de verdad: si se envian bytes basura
-        Django la rechaza antes por corrupta, y no se estaria probando el
-        limite de tamano sino la validacion de formato.
+        Rechazarla dejaria sin publicar a quien necesita ayuda, asi que el
+        sistema la encoge automaticamente y la publicacion sigue adelante.
         """
-        buffer = io.BytesIO()
-        # Ruido aleatorio para que el JPEG no se comprima y supere los 5 MB.
         import random
 
+        buffer = io.BytesIO()
+        # Ruido aleatorio para que el JPEG no se comprima y supere los 5 MB.
         grande = Image.frombytes(
             "RGB",
             (2600, 2600),
@@ -167,10 +166,50 @@ class SubidaDeImagenesTests(TestCase):
             "descripcion": "Descripcion suficientemente larga para pasar.",
             "foto": SimpleUploadedFile("enorme.jpg", contenido, content_type="image/jpeg"),
         }
+        self.client.post(reverse("reportes:crear"), datos)
+
+        # La publicacion se creo, con su foto ya reducida.
+        reporte = ReporteComunitario.objects.first()
+        self.assertIsNotNone(reporte, "La foto pesada impidio publicar")
+        self.assertTrue(reporte.foto)
+        self.assertLess(
+            reporte.foto.size, 5 * 1024 * 1024,
+            "La foto no se redujo al guardarse",
+        )
+
+    @override_settings(MAX_UPLOAD_ABSOLUTO_MB=1)
+    def test_se_rechaza_un_archivo_absurdamente_grande(self):
+        """
+        Por encima del tope absoluto si se rechaza, para no agotar memoria.
+
+        Se baja el tope a 1 MB en la prueba en vez de generar un archivo de
+        40 MB: probar el mismo comportamiento sin gastar memoria ni tiempo.
+        """
+        buffer = io.BytesIO()
+        import random
+
+        grande = Image.frombytes(
+            "RGB",
+            (1400, 1400),
+            bytes(random.getrandbits(8) for _ in range(1400 * 1400 * 3)),
+        )
+        grande.save(buffer, format="JPEG", quality=100)
+        buffer.seek(0)
+        contenido = buffer.read()
+        self.assertGreater(len(contenido), 1024 * 1024)
+
+        datos = {
+            "tipo_reporte": "DANOS",
+            "ciudad": "Armenia",
+            "zona": "Centro",
+            "urgencia": "ALTA",
+            "descripcion": "Descripcion suficientemente larga para pasar.",
+            "foto": SimpleUploadedFile("gigante.jpg", contenido, content_type="image/jpeg"),
+        }
         respuesta = self.client.post(reverse("reportes:crear"), datos)
 
         self.assertEqual(ReporteComunitario.objects.count(), 0)
-        self.assertContains(respuesta, "pesa demasiado")
+        self.assertContains(respuesta, "pesa mas de")
 
     def test_se_rechaza_un_archivo_corrupto_o_disfrazado(self):
         """Un .exe renombrado a .jpg no debe pasar."""
@@ -201,6 +240,32 @@ class SubidaDeImagenesTests(TestCase):
         }
         self.client.post(reverse("reportes:crear"), datos)
         self.assertTrue(ReporteComunitario.objects.first().foto)
+
+    def test_la_foto_se_puede_descargar_del_sitio(self):
+        """
+        La imagen debe servirse de verdad, no solo aparecer en el HTML.
+
+        Django solo sirve archivos media con DEBUG=True; en produccion hay que
+        declararlo en urls.py. Sin eso las fotos se veian rotas en el sitio
+        publicado aunque los archivos existieran.
+        """
+        datos = {
+            "tipo_reporte": "DANOS",
+            "ciudad": "Armenia",
+            "zona": "Centro",
+            "urgencia": "ALTA",
+            "descripcion": "Descripcion suficientemente larga para pasar.",
+            "foto": imagen_de_prueba("visible.jpg"),
+        }
+        self.client.post(reverse("reportes:crear"), datos)
+        reporte = ReporteComunitario.objects.first()
+
+        respuesta = self.client.get(reporte.foto.url)
+
+        self.assertEqual(
+            respuesta.status_code, 200,
+            f"La foto no se sirve en {reporte.foto.url}",
+        )
 
     def test_la_foto_aparece_en_el_mapa(self):
         datos = {

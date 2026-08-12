@@ -133,23 +133,29 @@ def validar_imagen(archivo):
     """
     Valida una imagen subida por el publico.
 
+    La idea es que CUALQUIER foto tomada con un celular funcione: si pesa mas
+    de la cuenta, se encoge automaticamente en lugar de rechazarla. Solo se
+    rechaza lo que no es una imagen de verdad.
+
     Comprueba, en este orden:
-      1. Peso: un archivo enorme puede tumbar el servidor.
-      2. Extension: solo formatos de imagen conocidos.
-      3. Contenido real: se abre con Pillow y se verifica que sea de verdad
-         una imagen del formato que dice ser. Sin esto, alguien podria subir
-         un archivo ejecutable renombrado a .jpg.
-      4. Dimensiones: una imagen de 30.000 x 30.000 px cabe en pocos KB
-         comprimida pero consume gigas de memoria al procesarla (decompression
-         bomb).
+      1. Extension: solo formatos de imagen conocidos.
+      2. Contenido real: se abre con Pillow y se verifica que sea de verdad
+         una imagen. Sin esto, alguien podria subir un ejecutable renombrado
+         a .jpg.
+      3. Dimensiones absurdas: una imagen de 30.000 x 30.000 px cabe en pocos
+         KB comprimida pero consume gigas de memoria al procesarla.
+      4. Peso: si excede el limite, se reduce en vez de rechazarse.
     """
     if not archivo:
         return archivo
 
-    limite_mb = getattr(settings, "MAX_UPLOAD_SIZE_MB", 5)
-    if archivo.size > limite_mb * 1024 * 1024:
+    # Tope absoluto para no agotar la memoria al abrir el archivo. Muy por
+    # encima de cualquier foto de celular (las mas pesadas rondan los 15 MB).
+    tope_mb = getattr(settings, "MAX_UPLOAD_ABSOLUTO_MB", 40)
+    if archivo.size > tope_mb * 1024 * 1024:
         raise ValidationError(
-            f"La imagen pesa demasiado. El maximo permitido es {limite_mb} MB."
+            f"El archivo pesa mas de {tope_mb} MB. "
+            "Toma la foto con la camara normal de tu celular."
         )
 
     nombre = (archivo.name or "").lower()
@@ -191,7 +197,66 @@ def validar_imagen(archivo):
             "Toma la foto con tu celular normalmente o reduce su tamano."
         )
 
+    # Si la foto es pesada, se reduce en vez de rechazarla: quien esta pidiendo
+    # ayuda no deberia pelear con el tamano de su propia foto.
+    limite_mb = getattr(settings, "MAX_UPLOAD_SIZE_MB", 5)
+    if archivo.size > limite_mb * 1024 * 1024:
+        return _reducir_imagen(archivo, formato)
+
     return archivo
+
+
+def _reducir_imagen(archivo, formato):
+    """
+    Encoge una foto demasiado pesada conservando su aspecto.
+
+    Se reduce el lado mayor a 1920 px y se recomprime. Una foto de celular de
+    12 MB queda en torno a 300 KB, suficiente para verse bien en el sitio.
+
+    Si algo falla, se devuelve el archivo original: es preferible guardar una
+    foto grande a perder la publicacion de alguien que necesita ayuda.
+    """
+    import io
+
+    from django.core.files.uploadedfile import InMemoryUploadedFile
+    from PIL import Image, ImageOps
+
+    LADO_MAXIMO = 1920
+
+    try:
+        archivo.seek(0)
+        imagen = Image.open(archivo)
+
+        # Respeta la orientacion con que se tomo la foto: sin esto, las fotos
+        # verticales de celular aparecen acostadas.
+        imagen = ImageOps.exif_transpose(imagen)
+
+        if imagen.mode in ("RGBA", "P", "LA"):
+            fondo = Image.new("RGB", imagen.size, (255, 255, 255))
+            fondo.paste(imagen, mask=imagen.split()[-1] if imagen.mode != "P" else None)
+            imagen = fondo
+        elif imagen.mode != "RGB":
+            imagen = imagen.convert("RGB")
+
+        imagen.thumbnail((LADO_MAXIMO, LADO_MAXIMO), Image.LANCZOS)
+
+        buffer = io.BytesIO()
+        imagen.save(buffer, format="JPEG", quality=82, optimize=True, progressive=True)
+        buffer.seek(0)
+
+        nombre = (archivo.name or "foto.jpg").rsplit(".", 1)[0] + ".jpg"
+
+        return InMemoryUploadedFile(
+            buffer,
+            "ImageField",
+            nombre,
+            "image/jpeg",
+            buffer.getbuffer().nbytes,
+            None,
+        )
+    except Exception:
+        archivo.seek(0)
+        return archivo
 
 
 def obtener_ip(request):

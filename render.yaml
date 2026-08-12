@@ -15,6 +15,16 @@ services:
     startCommand: "gunicorn config.wsgi:application"
     healthCheckPath: /
 
+    # Disco persistente para las fotos que sube la gente.
+    #
+    # Sin esto, cada actualizacion del sitio borra las imagenes: el sistema de
+    # archivos de Render es temporal. Requiere plan de pago (Starter o
+    # superior); en el plan gratuito Render ignora esta seccion.
+    disk:
+      name: fotos
+      mountPath: /var/data
+      sizeGB: 1
+
     envVars:
       # Clave de seguridad. Render genera una aleatoria y la mantiene secreta.
       - key: SECRET_KEY
@@ -40,6 +50,11 @@ services:
 
       - key: PYTHON_VERSION
         value: "3.12.7"
+
+      # Las fotos se guardan en el disco persistente definido arriba, para que
+      # sobrevivan a las actualizaciones del sitio.
+      - key: MEDIA_ROOT
+        value: /var/data/media
 
       # --- Administrador inicial ---
       # El plan gratuito no da acceso a terminal, asi que el primer

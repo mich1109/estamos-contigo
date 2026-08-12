@@ -10,7 +10,9 @@
 (function () {
   "use strict";
 
-  var MAX_MB = 5;
+  // Tope absoluto. Por encima de 5 MB el servidor reduce la foto solo, asi
+  // que aqui solo se avisa de archivos verdaderamente enormes.
+  var MAX_MB = 40;
 
   document.querySelectorAll("[data-selector-foto]").forEach(function (caja) {
     var campo = caja.querySelector('input[type="file"][name]');
@@ -67,11 +69,10 @@
 
       if (archivo.size > MAX_MB * 1024 * 1024) {
         mostrarError(
-          "La foto pesa " +
+          "El archivo pesa " +
             (archivo.size / 1024 / 1024).toFixed(1) +
-            " MB y el máximo es " +
-            MAX_MB +
-            " MB. Elige otra foto o redúcela desde tu celular."
+            " MB, demasiado para subirlo. Toma la foto con la cámara normal " +
+            "de tu celular."
         );
         return false;
       }

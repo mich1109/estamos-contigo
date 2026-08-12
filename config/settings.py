@@ -182,10 +182,14 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "media/"
-# En Render se puede montar un disco persistente en /var/data para que las
-# fotos no se borren en cada actualizacion del sitio. Si no existe, se usa la
-# carpeta local de siempre.
+# En Render se monta un disco persistente para que las fotos que sube la gente
+# no se borren en cada actualizacion del sitio. Si no existe, se usa la carpeta
+# local de siempre.
 MEDIA_ROOT = os.getenv("MEDIA_ROOT", "") or (BASE_DIR / "media")
+
+# Las fotos subidas por el publico se sirven desde config/urls.py, tanto en
+# desarrollo como en produccion. Django no lo hace por defecto fuera de DEBUG,
+# y sin ello las imagenes darian 404 aunque los archivos existieran.
 
 # WhiteNoise comprime los archivos y les pone un nombre unico segun su
 # contenido, para que el navegador los guarde en cache sin quedarse con
@@ -274,9 +278,16 @@ CSRF_TRUSTED_ORIGINS = [
 
 # --- Limites de subida de archivos ------------------------------------------
 
+# A partir de este tamano la foto se reduce automaticamente (no se rechaza).
 MAX_UPLOAD_SIZE_MB = 5
-FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024
-DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024
+# Tope absoluto: por encima de esto si se rechaza, para no agotar la memoria.
+# Muy por encima de cualquier foto de celular.
+MAX_UPLOAD_ABSOLUTO_MB = 40
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+# Debe admitir la foto mas pesada que se acepte, o el servidor la corta antes
+# de que Django pueda reducirla.
+DATA_UPLOAD_MAX_MEMORY_SIZE = (MAX_UPLOAD_ABSOLUTO_MB + 5) * 1024 * 1024
 # Un formulario legitimo no manda cientos de campos: limitarlos frena ataques
 # de agotamiento de memoria por hash collision.
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 100

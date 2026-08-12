@@ -9,7 +9,8 @@ services:
   - type: web
     name: estamos-contigo
     runtime: python
-    plan: free
+    # Starter: el sitio no se duerme y admite disco persistente para las fotos.
+    plan: starter
     region: oregon
     buildCommand: "./build.sh"
     startCommand: "gunicorn config.wsgi:application"
@@ -17,19 +18,12 @@ services:
 
     # --- Disco persistente para las fotos ---
     #
-    # Las cuatro lineas de abajo hacen que las fotos que sube la gente NO se
-    # borren en cada actualizacion del sitio.
-    #
-    # Solo funcionan con el plan Starter o superior. En el plan gratuito, este
-    # archivo falla al sincronizar ("Failed sync") y el sitio no se actualiza.
-    #
-    # CUANDO ACTIVES EL PLAN DE PAGO: quita el "#" de las cuatro lineas y
-    # agrega la variable MEDIA_ROOT con el valor /var/data/media.
-    #
-    # disk:
-    #   name: fotos
-    #   mountPath: /var/data
-    #   sizeGB: 1
+    # Hace que las fotos que sube la gente NO se borren en cada actualizacion
+    # del sitio. Requiere plan Starter o superior (activo desde agosto 2026).
+    disk:
+      name: fotos
+      mountPath: /var/data
+      sizeGB: 1
 
     envVars:
       # Clave de seguridad. Render genera una aleatoria y la mantiene secreta.
@@ -57,14 +51,10 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.7"
 
-      # MEDIA_ROOT solo hace falta cuando exista el disco persistente (plan de
-      # pago). Sin el, Django usa la carpeta media/ del proyecto, que funciona
-      # pero se borra en cada actualizacion del sitio.
-      #
-      # CUANDO ACTIVES EL PLAN DE PAGO: descomenta estas dos lineas.
-      #
-      # - key: MEDIA_ROOT
-      #   value: /var/data/media
+      # Las fotos se guardan en el disco persistente definido arriba, para que
+      # sobrevivan a las actualizaciones del sitio.
+      - key: MEDIA_ROOT
+        value: /var/data/media
 
       # --- Administrador inicial ---
       # El plan gratuito no da acceso a terminal, asi que el primer
